@@ -8,7 +8,7 @@ Build Digister as a Node/TypeScript app on the Vercel AI SDK, talking to a local
 
 Three choices drive the plan:
 
-- **X is the expensive, fragile source.** The free tier is gone; reads are billed per post. Read a short List you curate, not the algorithmic home feed, and set a hard daily cap.
+- **X is the expensive, fragile source.** The free tier is gone; reads are billed per post. Read a short List you curate, prefer free cross-posted feeds, and pick one paid or opt-in route for the rest (all options are compared below).
 - **YouTube is cheap.** Subscriptions and new uploads fit easily in the free API quota. Transcripts are the hard part, because the official captions download only works for videos you own.
 - **The agent does the editing, not the plumbing.** Fetching and storage are plain code; the LLM agent ranks, summarizes, and writes the digest. That keeps a small local model on the work it is good at.
 
@@ -22,12 +22,47 @@ Both sources need an OAuth sign-in once, with tokens kept in the OS keychain or 
 | Cost | About $0.005 per post read, per third-party trackers ([posteverywhere](https://posteverywhere.ai/blog/x-twitter-api-pricing), [opentweet](https://opentweet.io/x-api-pricing)); confirm in the X Developer Console | Free within a default daily quota of 10,000 units (approximate, from memory) |
 | What to read | Posts from one private X List of the 30 to 80 accounts you trust, fetched with `since_id` so each post is paid for once | `subscriptions.list` (mine) for your channels, then each channel's uploads playlist via `playlistItems.list`, then `videos.list` for duration and stats |
 | Interest signals | Your bookmarks and likes (owned reads, cheaper than public reads) | Your liked videos (`videos.list` with `myRating=like`) |
-| What to avoid | The algorithmic home timeline (most of what you quit), scraping or Nitter-style mirrors (against the terms, risks your account) | `search.list` (about 100 units a call); watch history and Watch Later are not exposed by the API |
+| What to avoid | The algorithmic home timeline (most of what you quit), unless you opt in, cookie or scraping routes (see Every way to read X) | `search.list` (about 100 units a call); watch history and Watch Later are not exposed by the API |
 | Full text | The post text, plus the thread if the author replied to themselves (extra reads) | Transcripts: the official `captions.download` only works on videos you own |
 
 **Budget for X.** A cap of 200 new posts a day is about $1 a day, roughly $30 a month at the rate above; 100 a day halves it. Digister enforces the cap in code and logs spend per run, so a busy news day cannot surprise you.
 
 **Transcripts for YouTube.** Use `yt-dlp --write-auto-subs --skip-download` to fetch the auto-generated subtitles as text. It is unofficial and breaks from time to time, so the fallback order is: subtitles, then the video description and chapters, then (optional, slow) downloading audio and transcribing locally with whisper.cpp. A zero-cost alternative to the API for new uploads is each channel's public RSS feed, `youtube.com/feeds/videos.xml?channel_id=…`, which uses no quota.
+
+## Every way to read X
+
+There are seven workable routes and one dead one; Digister should treat them as interchangeable collectors behind one `XSource` interface, so you can switch when prices or breakage change. Prices below are vendor or blog figures, normalized to 1,000 posts read.
+
+| Option | How it works | Cost per 1,000 posts | Risk and upkeep |
+| --- | --- | --- | --- |
+| Official X API | Pay-per-use credits, OAuth on your account, read a List with `since_id` | About $5 ([posteverywhere](https://posteverywhere.ai/blog/x-twitter-api-pricing)) | Allowed by X's terms; stable; the only fully compliant route |
+| Third-party read APIs | A vendor scrapes X and sells a REST API: [twitterapi.io](https://twitterapi.io/) (about $0.15), SocialData (about $0.20), GetXAPI (about $0.05, its own claim), Apify actors ($0.40 to $1.50) ([GetXAPI ranking](https://www.getxapi.com/blogs/cheapest-twitter-api-2026-8-providers-ranked-by-real-per-1000-tweet-cost), [xpoz](https://www.xpoz.ai/blog/comparisons/best-twitter-api-alternatives-2026/)) | $0.05 to $1.50 | Your X account is never touched; the vendor is in a grey area with X and can vanish or change price |
+| Browser-session cookies | Reuse the `auth_token` and `ct0` cookies of your logged-in browser and call X's web endpoints. This is OpenClaw's "bird" skill ([listing](https://playbooks.com/skills/z980944038-dev/openclawwdl/bird-1.0.0)); in Python, [twscrape](https://scrapfly.io/blog/posts/best-twitter-scrapers-github) or twikit forks | Free | Against X's terms; your account can be rate-limited or locked; breaks when X changes its web app (twikit 2.3.3 broke in 2026 and needed a fork, per [twifork](https://pypi.org/project/twifork/)) |
+| RSSHub, self-hosted | Runs locally and turns X profiles and Lists into RSS, using an `auth_token` cookie or X API keys ([GetXAPI article](https://www.getxapi.com/blogs/twitter-rss-feed), unverified against RSSHub docs) | Free with cookies, API price with keys | Same risk as cookies when used with them; an extra service to keep running; gives plain RSS any reader can use |
+| Browser automation | Playwright drives a real browser profile you are logged into, opens your List, scrolls, and extracts posts; an LLM browser agent could do the same | Free | Slowest and most fragile; bot detection; same terms issue; useful as a last resort |
+| Follow them elsewhere | Many X authors cross-post to Bluesky, Mastodon, Threads, Substack, or a blog. Bluesky's AT Protocol API is free and open, and Mastodon, Substack, and blogs publish RSS | Free | Fully allowed and stable; only covers people who cross-post |
+| Paste-in links | Share a post URL to a Digister inbox (an email address or a notes file) when someone sends you one; Digister fetches and summarizes it | Free or cents | No risk; covers only what reaches you some other way |
+| Nitter | The open-source X front end | Not viable | The repo was archived on Aug 26, 2026 and public instances return errors ([Nitter wiki](https://github.com/zedeus/nitter/wiki/Creating-session-tokens/7e06d8c4b6df31111ccce6a7d2b20fe724964d81), [GetXAPI article](https://www.getxapi.com/blogs/twitter-rss-feed)) |
+
+**Recommended mix.** First, map each account on your List to a cross-posted feed where one exists, which is free and safe. Fetch the rest through one paid route: a third-party read API keeps 200 posts a day under a dollar a month, and the official API is the choice if you want zero grey area. Ship the cookie collector too, off by default, read-only, one fetch per morning, with a clear warning in `digister auth`, because it is the only free way to read your actual home timeline. Browser automation stays a documented fallback, not a default.
+
+## Every way to read YouTube
+
+YouTube splits into two jobs, finding new videos and getting their words, and each has free options. All of these are free in money; they differ in sign-in and fragility.
+
+| Job | Option | How it works | Risk and upkeep |
+| --- | --- | --- | --- |
+| Find new videos | YouTube Data API v3 | OAuth once; `subscriptions.list` then each channel's uploads playlist | Official and stable; daily quota is plenty for one person |
+| Find new videos | Channel RSS feeds | `youtube.com/feeds/videos.xml?channel_id=…`, about the latest 15 uploads per channel, no key | No sign-in, no quota; you keep the channel list yourself |
+| Find new videos | Google Takeout | Export `subscriptions.csv` once to seed the RSS channel list | One-off and manual; rerun when you subscribe to new channels |
+| Find new videos | Invidious or Piped instance | Open-source YouTube front ends with their own APIs and RSS | Public instances come and go; self-hosting is extra work |
+| Get the words | `yt-dlp` subtitles | Download auto-generated or uploaded subtitles without the video | Unofficial; update it often as YouTube changes |
+| Get the words | Transcript libraries | `youtube-transcript-api` (Python) or a Node equivalent fetch the same captions directly | Unofficial; can be rate-limited from one IP |
+| Get the words | Local Whisper | Download audio with `yt-dlp`, transcribe with whisper.cpp or faster-whisper | Works when no captions exist; slow without a GPU |
+| Get the words | Description and chapters | Use the text the creator wrote | Always available; thin for long videos |
+| Get the words | Official `captions.download` | Data API call | Only for videos you own, so not usable here |
+
+**Recommended mix.** Seed the channel list from the Data API (or Takeout), then poll channel RSS each morning, which needs no quota or token refresh. Get words with `yt-dlp` first, a transcript library second, the description third, and Whisper only for videos you mark as must-read.
 
 ## Agent SDK: OpenAI Agents SDK vs Vercel AI SDK
 
@@ -175,3 +210,11 @@ The official X, YouTube, OpenAI, and AI SDK docs could not be opened when this p
 - [AI SDK 6, Vercel](https://vercel.com/blog/ai-sdk-6)
 - [OpenAI Agents SDK review, Ry Walker](https://rywalker.com/research/openai-agents-sdk)
 - [LiteLLM tools in the Agents SDK, OpenAI forum](https://community.openai.com/t/support-for-litellm-tools-e-g-googlesearch-in-openai-agents-sdk/1240585)
+- [OpenClaw bird skill listing](https://playbooks.com/skills/z980944038-dev/openclawwdl/bird-1.0.0)
+- [Best Twitter scrapers on GitHub, Scrapfly](https://scrapfly.io/blog/posts/best-twitter-scrapers-github)
+- [twifork on PyPI](https://pypi.org/project/twifork/)
+- [Cheapest Twitter API 2026, GetXAPI](https://www.getxapi.com/blogs/cheapest-twitter-api-2026-8-providers-ranked-by-real-per-1000-tweet-cost)
+- [Best Twitter API alternatives 2026, xpoz](https://www.xpoz.ai/blog/comparisons/best-twitter-api-alternatives-2026/)
+- [twitterapi.io](https://twitterapi.io/)
+- [Twitter RSS feeds in 2026, GetXAPI](https://www.getxapi.com/blogs/twitter-rss-feed)
+- [Nitter wiki, session tokens](https://github.com/zedeus/nitter/wiki/Creating-session-tokens/7e06d8c4b6df31111ccce6a7d2b20fe724964d81)
