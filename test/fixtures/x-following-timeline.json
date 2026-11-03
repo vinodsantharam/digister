@@ -1,0 +1,314 @@
+{
+  "_comment": "Hand-written fixture mirroring X's GraphQL timeline shape; not a real capture. Replace with a real capture from `digister` (raw/x/) when available.",
+  "data": {
+    "home": {
+      "home_timeline_urt": {
+        "instructions": [
+          {
+            "type": "TimelineAddEntries",
+            "entries": [
+              {
+                "entryId": "tweet-2001",
+                "sortIndex": "2001",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "2001",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "rest_id": "uivy",
+                              "core": {
+                                "screen_name": "ivy",
+                                "name": "Ivy"
+                              },
+                              "legacy": {}
+                            }
+                          }
+                        },
+                        "note_tweet": {
+                          "note_tweet_results": {
+                            "result": {
+                              "text": "Long form analysis of local inference. Quantization trade-offs matter more than parameter counts. Quantization trade-offs matter more than parameter counts. Quantization trade-offs matter more than parameter counts. Quantization trade-offs matter more than parameter counts. Quantization trade-offs matter more than parameter counts. Quantization trade-offs matter more than parameter counts. Quantization trade-offs matter more than parameter counts. Quantization trade-offs matter more than parameter counts. Quantization trade-offs matter more than parameter counts. Quantization trade-offs matter more than parameter counts. Quantization trade-offs matter more than parameter counts. Quantization trade-offs matter more than parameter counts.  (note)"
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "full_text": "Following timeline note",
+                          "created_at": "Tue Nov 03 05:30:00 +0000 2026",
+                          "lang": "en",
+                          "favorite_count": 1,
+                          "retweet_count": 0,
+                          "conversation_id_str": "2001",
+                          "entities": {
+                            "urls": []
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "entryId": "tweet-2002",
+                "sortIndex": "2002",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "2002",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "rest_id": "ujack",
+                              "core": {
+                                "screen_name": "jack",
+                                "name": "Jack"
+                              },
+                              "legacy": {}
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "full_text": "RT @ivy: boosted",
+                          "created_at": "Tue Nov 03 05:30:00 +0000 2026",
+                          "lang": "en",
+                          "favorite_count": 1,
+                          "retweet_count": 0,
+                          "conversation_id_str": "2002",
+                          "retweeted_status_result": {
+                            "result": {
+                              "__typename": "Tweet",
+                              "rest_id": "2000",
+                              "core": {
+                                "user_results": {
+                                  "result": {
+                                    "__typename": "User",
+                                    "rest_id": "uivy",
+                                    "core": {
+                                      "screen_name": "ivy",
+                                      "name": "Ivy"
+                                    },
+                                    "legacy": {}
+                                  }
+                                }
+                              },
+                              "legacy": {
+                                "full_text": "Boosted original",
+                                "created_at": "Mon Nov 02 22:00:00 +0000 2026",
+                                "lang": "en",
+                                "favorite_count": 1,
+                                "retweet_count": 0,
+                                "conversation_id_str": "2000",
+                                "entities": {
+                                  "urls": [
+                                    {
+                                      "expanded_url": "https://example.com/post"
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          },
+                          "entities": {
+                            "urls": []
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "entryId": "tweet-1001",
+                "sortIndex": "1001",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "__typename": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "__typename": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "1001",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "rest_id": "ualice",
+                              "core": {
+                                "screen_name": "alice",
+                                "name": "Alice"
+                              },
+                              "legacy": {}
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "full_text": "Short original tweet about Ollama https://t.co/abc",
+                          "created_at": "Tue Nov 03 05:30:00 +0000 2026",
+                          "lang": "en",
+                          "favorite_count": 1,
+                          "retweet_count": 0,
+                          "conversation_id_str": "1001",
+                          "entities": {
+                            "urls": [
+                              {
+                                "expanded_url": "https://ollama.com/blog/new"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "entryId": "promoted-tweet-5550002-def",
+                "content": {
+                  "entryType": "TimelineTimelineItem",
+                  "itemContent": {
+                    "itemType": "TimelineTweet",
+                    "tweet_results": {
+                      "result": {
+                        "__typename": "Tweet",
+                        "rest_id": "5550002",
+                        "core": {
+                          "user_results": {
+                            "result": {
+                              "__typename": "User",
+                              "rest_id": "uadco",
+                              "core": {
+                                "screen_name": "adco",
+                                "name": "AdCo"
+                              },
+                              "legacy": {}
+                            }
+                          }
+                        },
+                        "legacy": {
+                          "full_text": "Sponsored",
+                          "created_at": "Tue Nov 03 05:30:00 +0000 2026",
+                          "lang": "en",
+                          "favorite_count": 1,
+                          "retweet_count": 0,
+                          "conversation_id_str": "5550002",
+                          "entities": {
+                            "urls": []
+                          }
+                        },
+                        "promotedMetadata": {
+                          "advertiser_results": {}
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "entryId": "conversationthread-2003",
+                "content": {
+                  "entryType": "TimelineTimelineModule",
+                  "items": [
+                    {
+                      "entryId": "conversationthread-2003-tweet-2003",
+                      "item": {
+                        "itemContent": {
+                          "itemType": "TimelineTweet",
+                          "tweet_results": {
+                            "result": {
+                              "__typename": "Tweet",
+                              "rest_id": "2003",
+                              "core": {
+                                "user_results": {
+                                  "result": {
+                                    "__typename": "User",
+                                    "rest_id": "ukate",
+                                    "core": {
+                                      "screen_name": "kate",
+                                      "name": "Kate"
+                                    },
+                                    "legacy": {}
+                                  }
+                                }
+                              },
+                              "legacy": {
+                                "full_text": "Module head",
+                                "created_at": "Tue Nov 03 05:30:00 +0000 2026",
+                                "lang": "en",
+                                "favorite_count": 1,
+                                "retweet_count": 0,
+                                "conversation_id_str": "2003",
+                                "entities": {
+                                  "urls": []
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "entryId": "conversationthread-2003-tweet-2004",
+                      "item": {
+                        "itemContent": {
+                          "itemType": "TimelineTweet",
+                          "tweet_results": {
+                            "result": {
+                              "__typename": "Tweet",
+                              "rest_id": "2004",
+                              "core": {
+                                "user_results": {
+                                  "result": {
+                                    "__typename": "User",
+                                    "rest_id": "ukate",
+                                    "core": {
+                                      "screen_name": "kate",
+                                      "name": "Kate"
+                                    },
+                                    "legacy": {}
+                                  }
+                                }
+                              },
+                              "legacy": {
+                                "full_text": "Module self reply",
+                                "created_at": "Tue Nov 03 05:30:00 +0000 2026",
+                                "lang": "en",
+                                "favorite_count": 1,
+                                "retweet_count": 0,
+                                "conversation_id_str": "2003",
+                                "in_reply_to_status_id_str": "2003",
+                                "entities": {
+                                  "urls": []
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
