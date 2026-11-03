@@ -150,8 +150,8 @@ export async function captureTimelines(
             deps.saveRaw(op, n, body);
             for (const p of deps.parse(body)) {
               if (!posts.has(p.id)) posts.set(p.id, p);
-              // Reposts embed old tweets; only the posts themselves tell us how far back we are.
-              if (p.source === null) {
+              // Reposts embed old tweets and pinned tweets can be years old; only ordinary posts tell us how far back we are.
+              if (p.source === null && !p.pinned) {
                 const t = Date.parse(p.created_at);
                 if (!Number.isNaN(t) && (oldestMs === null || t < oldestMs)) oldestMs = t;
               }

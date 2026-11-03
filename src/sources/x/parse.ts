@@ -1,6 +1,7 @@
 import type { PostInput } from "../../store/db.js";
 
-export type ParsedPost = PostInput;
+/** `pinned` marks a profile-pinned tweet: it can be arbitrarily old, so it says nothing about timeline depth. */
+export type ParsedPost = PostInput & { pinned?: boolean };
 
 type Obj = Record<string, unknown>;
 
@@ -85,38 +86,45 @@ function toPost(tweet: Obj, source: string | null, quotedId: string | null): Par
 export function parseTimeline(json: unknown): ParsedPost[] {
   const posts = new Map<string, ParsedPost>();
 
-  const handleTweet = (node: Obj, source: string | null): void => {
+  const put = (post: ParsedPost, pinned: boolean): void => {
+    const existing = posts.get(post.id);
+    if (!existing) posts.set(post.id, pinned ? { ...post, pinned: true } : post);
+    else if (existing.pinned && !pinned) posts.set(post.id, post);
+  };
+
+  const handleTweet = (node: Obj, source: string | null, pinned: boolean): void => {
     const tweet = unwrap(node);
     if (isObj(tweet.promotedMetadata) || isObj(node.promotedMetadata)) return;
 
     const rt = get(tweet, "legacy", "retweeted_status_result", "result");
     if (isTweetNode(rt)) {
       const { handle } = author(tweet);
-      handleTweet(rt, handle ? `repost by @${handle}` : "repost");
+      handleTweet(rt, handle ? `repost by @${handle}` : "repost", pinned);
       return;
     }
 
     const quoted = get(tweet, "quoted_status_result", "result");
     const quotedId = isTweetNode(quoted) ? str(unwrap(quoted).rest_id) ?? null : null;
     const post = toPost(tweet, source, quotedId);
-    if (post && !posts.has(post.id)) posts.set(post.id, post);
-    for (const v of Object.values(tweet)) walk(v);
+    if (post) put(post, pinned);
+    for (const v of Object.values(tweet)) walk(v, pinned);
   };
 
-  const walk = (node: unknown): void => {
+  const walk = (node: unknown, pinned = false): void => {
     if (Array.isArray(node)) {
-      for (const v of node) walk(v);
+      for (const v of node) walk(v, pinned);
       return;
     }
     if (!isObj(node)) return;
     if (isObj(node.promotedMetadata)) return;
     const entryId = str(node.entryId);
     if (entryId && entryId.startsWith("promoted-")) return;
+    const inPin = pinned || node.type === "TimelinePinEntry" || (entryId?.startsWith("pinned-") ?? false);
     if (isTweetNode(node)) {
-      handleTweet(node, null);
+      handleTweet(node, null, inPin);
       return;
     }
-    for (const v of Object.values(node)) walk(v);
+    for (const v of Object.values(node)) walk(v, inPin);
   };
 
   walk(json);

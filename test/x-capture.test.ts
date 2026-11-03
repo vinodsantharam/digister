@@ -111,6 +111,17 @@ describe("captureTimelines", () => {
     expect(r.posts.map((p) => p.id)).toContain("2");
   });
 
+  it("ignores pinned posts when judging the lookback", async () => {
+    const pinned = { ...post("pin", hoursAgo(20000)), pinned: true };
+    const { page } = fakePage({
+      onGoto: [resp("ListLatestTweetsTimeline", { posts: [pinned, post("1", hoursAgo(1))] })],
+      batches: [[resp("ListLatestTweetsTimeline", { posts: [post("2", hoursAgo(2))] })]],
+    });
+    const r = await run(page, deps().d);
+    expect(r.stops).toEqual(["no_new_posts"]);
+    expect(r.posts.map((p) => p.id)).toContain("2");
+  });
+
   it("stops after 3 scrolls with no new posts", async () => {
     const same = resp("ListLatestTweetsTimeline", { posts: [post("1", hoursAgo(1))] });
     const { page, calls } = fakePage({ onGoto: [same], batches: [] });

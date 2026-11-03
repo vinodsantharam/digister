@@ -74,3 +74,23 @@ describe("parseTimeline robustness", () => {
     expect(parseTimeline({ whatever: { nested: [inner] } }).length).toBeGreaterThan(0);
   });
 });
+
+describe("parseTimeline (pinned)", () => {
+  const tweet = (id: string, created: string) => ({
+    __typename: "Tweet", rest_id: id,
+    core: { user_results: { result: { core: { screen_name: "alice", name: "Alice" } } } },
+    legacy: { full_text: id, created_at: created },
+  });
+  const payload = {
+    instructions: [
+      { type: "TimelinePinEntry", entry: { entryId: "tweet-1", content: { itemContent: { tweet_results: { result: tweet("1", "Mon Jan 01 00:00:00 +0000 2018") } } } } },
+      { type: "TimelineAddEntries", entries: [{ entryId: "tweet-2", content: { itemContent: { tweet_results: { result: tweet("2", "Mon Nov 02 00:00:00 +0000 2026") } } } }] },
+    ],
+  };
+
+  it("flags tweets inside a TimelinePinEntry", () => {
+    const p = byId(parseTimeline(payload));
+    expect(p["1"]!.pinned).toBe(true);
+    expect(p["2"]!.pinned).toBeUndefined();
+  });
+});
