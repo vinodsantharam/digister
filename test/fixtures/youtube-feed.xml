@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- HAND-WRITTEN fixture (youtube.com was unreachable when this was written); follows the real YouTube Atom feed format. Replace with a recorded feed when convenient. -->
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">
+ <link rel="self" href="http://www.youtube.com/feeds/videos.xml?channel_id=UCsBjURrPoezykLs9EqgamOA"/>
+ <id>yt:channel:sBjURrPoezykLs9EqgamOA</id>
+ <yt:channelId>sBjURrPoezykLs9EqgamOA</yt:channelId>
+ <title>Fireship</title>
+ <link rel="alternate" href="https://www.youtube.com/channel/UCsBjURrPoezykLs9EqgamOA"/>
+ <author>
+  <name>Fireship</name>
+  <uri>https://www.youtube.com/channel/UCsBjURrPoezykLs9EqgamOA</uri>
+ </author>
+ <published>2017-04-07T18:38:25+00:00</published>
+ <entry>
+  <id>yt:video:aaaaaaaaa01</id>
+  <yt:videoId>aaaaaaaaa01</yt:videoId>
+  <yt:channelId>UCsBjURrPoezykLs9EqgamOA</yt:channelId>
+  <title>New open-weight model beats the giants &amp; runs locally</title>
+  <link rel="alternate" href="https://www.youtube.com/watch?v=aaaaaaaaa01"/>
+  <author>
+   <name>Fireship</name>
+   <uri>https://www.youtube.com/channel/UCsBjURrPoezykLs9EqgamOA</uri>
+  </author>
+  <published>2026-11-03T08:00:00+00:00</published>
+  <updated>2026-11-03T09:15:42+00:00</updated>
+  <media:group>
+   <media:title>New open-weight model beats the giants &amp; runs locally</media:title>
+   <media:content url="https://www.youtube.com/v/aaaaaaaaa01?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i2.ytimg.com/vi/aaaaaaaaa01/hqdefault.jpg" width="480" height="360"/>
+   <media:description>An open-weight model just landed.
+Second line of the description with a link https://example.com/post</media:description>
+   <media:community>
+    <media:starRating count="12345" average="5.00" min="1" max="5"/>
+    <media:statistics views="250000"/>
+   </media:community>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:bbbbbbbbb02</id>
+  <yt:videoId>bbbbbbbbb02</yt:videoId>
+  <yt:channelId>UCsBjURrPoezykLs9EqgamOA</yt:channelId>
+  <title>Docker in 100 seconds #shorts</title>
+  <link rel="alternate" href="https://www.youtube.com/shorts/bbbbbbbbb02"/>
+  <author>
+   <name>Fireship</name>
+   <uri>https://www.youtube.com/channel/UCsBjURrPoezykLs9EqgamOA</uri>
+  </author>
+  <published>2026-11-02T17:30:00+00:00</published>
+  <updated>2026-11-02T18:00:00+00:00</updated>
+  <media:group>
+   <media:title>Docker in 100 seconds #shorts</media:title>
+   <media:content url="https://www.youtube.com/v/bbbbbbbbb02?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i2.ytimg.com/vi/bbbbbbbbb02/hqdefault.jpg" width="480" height="360"/>
+   <media:description>Quick one.</media:description>
+   <media:community>
+    <media:starRating count="900" average="5.00" min="1" max="5"/>
+    <media:statistics views="48000"/>
+   </media:community>
+  </media:group>
+ </entry>
+ <entry>
+  <id>yt:video:ccccccccc03</id>
+  <yt:videoId>ccccccccc03</yt:videoId>
+  <yt:channelId>UCsBjURrPoezykLs9EqgamOA</yt:channelId>
+  <title>An older upload from last month</title>
+  <link rel="alternate" href="https://www.youtube.com/watch?v=ccccccccc03"/>
+  <author>
+   <name>Fireship</name>
+   <uri>https://www.youtube.com/channel/UCsBjURrPoezykLs9EqgamOA</uri>
+  </author>
+  <published>2026-10-01T12:00:00+00:00</published>
+  <updated>2026-10-02T12:00:00+00:00</updated>
+  <media:group>
+   <media:title>An older upload from last month</media:title>
+   <media:content url="https://www.youtube.com/v/ccccccccc03?version=3" type="application/x-shockwave-flash" width="640" height="390"/>
+   <media:thumbnail url="https://i2.ytimg.com/vi/ccccccccc03/hqdefault.jpg" width="480" height="360"/>
+   <media:description></media:description>
+   <media:community>
+    <media:starRating count="10" average="5.00" min="1" max="5"/>
+    <media:statistics views="1000"/>
+   </media:community>
+  </media:group>
+ </entry>
+</feed>

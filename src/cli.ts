@@ -1,5 +1,7 @@
 import { Command, Option } from "commander";
 import { TierSchema } from "./config.js";
+import { loadChannels } from "./config.js";
+import { fetchAllFeeds } from "./sources/youtube/rss.js";
 import { importChannels } from "./sources/youtube/channels.js";
 
 const notImplemented = () => {
@@ -37,7 +39,27 @@ export function buildProgram(): Command {
         process.exitCode = 1;
       }
     });
-  yt.command("check").description("Show the newest video per channel").action(notImplemented);
+  yt.command("check")
+    .description("Show the newest video per channel")
+    .action(async () => {
+      try {
+        const { channels } = loadChannels();
+        const { feeds, failed } = await fetchAllFeeds(channels);
+        for (const { channel, entries } of feeds) {
+          const newest = [...entries].sort((a, b) => b.published_at.localeCompare(a.published_at))[0];
+          console.log(
+            newest
+              ? `${channel.name}: ${newest.title} (${newest.published_at.slice(0, 10)}) ${newest.url}`
+              : `${channel.name}: no videos`,
+          );
+        }
+        for (const name of failed) console.log(`${name}: FAILED`);
+        if (failed.length > 0) process.exitCode = 1;
+      } catch (err) {
+        console.error((err as Error).message);
+        process.exitCode = 1;
+      }
+    });
 
   program.command("doctor").description("Check the setup").action(notImplemented);
   return program;
