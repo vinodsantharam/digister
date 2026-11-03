@@ -2,6 +2,7 @@ import { Command, Option } from "commander";
 import { TierSchema } from "./config.js";
 import { loadChannels, loadDigisterConfig } from "./config.js";
 import { fetchAllFeeds } from "./sources/youtube/rss.js";
+import { ollamaHealthy } from "./llm/client.js";
 import { xCheck, xLogin } from "./sources/x/browser.js";
 import { importChannels } from "./sources/youtube/channels.js";
 
@@ -93,7 +94,14 @@ export function buildProgram(): Command {
       }
     });
 
-  program.command("doctor").description("Check the setup").action(notImplemented);
+  program
+    .command("doctor")
+    .description("Check the setup")
+    .action(async () => {
+      const s = await ollamaHealthy().catch((err: Error) => ({ ok: false, model: "?", error: err.message }) as const);
+      console.log(`Ollama: ${s.ok ? "ok" : "PROBLEM"}, model ${s.model}${s.error ? ` (${s.error})` : ""}`);
+      if (!s.ok) process.exitCode = 1;
+    });
   return program;
 }
 
