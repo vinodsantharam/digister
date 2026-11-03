@@ -1,7 +1,8 @@
 import { Command, Option } from "commander";
 import { TierSchema } from "./config.js";
-import { loadChannels } from "./config.js";
+import { loadChannels, loadDigisterConfig } from "./config.js";
 import { fetchAllFeeds } from "./sources/youtube/rss.js";
+import { xCheck, xLogin } from "./sources/x/browser.js";
 import { importChannels } from "./sources/youtube/channels.js";
 
 const notImplemented = () => {
@@ -20,8 +21,39 @@ export function buildProgram(): Command {
     .action(notImplemented);
 
   const x = program.command("x").description("X source");
-  x.command("login").description("Log in to X once in a browser window").action(notImplemented);
-  x.command("check").description("Check the X session is still logged in").action(notImplemented);
+  x.command("login")
+    .description("Log in to X once in a browser window")
+    .action(async () => {
+      try {
+        if (await xLogin()) console.log("Logged in: session saved in the Digister profile.");
+        else {
+          console.error("No auth_token cookie found: login not completed. Run `digister x login` again.");
+          process.exitCode = 1;
+        }
+      } catch (err) {
+        console.error((err as Error).message);
+        process.exitCode = 1;
+      }
+    });
+  x.command("check")
+    .description("Check the X session is still logged in")
+    .action(async () => {
+      try {
+        const headless = loadDigisterConfig().x.headless;
+        const state = await xCheck({ headless });
+        console.log(
+          state === "logged_in"
+            ? "X: logged in"
+            : state === "logged_out"
+              ? "X: logged out (run `digister x login`)"
+              : "X: blocked (challenge page or HTTP error); open the profile headed and resolve it",
+        );
+        if (state !== "logged_in") process.exitCode = 1;
+      } catch (err) {
+        console.error((err as Error).message);
+        process.exitCode = 1;
+      }
+    });
 
   const yt = program.command("youtube").description("YouTube source");
   yt.command("import")
