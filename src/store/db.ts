@@ -232,3 +232,23 @@ export function setPostText(db: Db, id: string, text: string): void {
 export function getPost(db: Db, id: string): Post | undefined {
   return db.prepare("SELECT * FROM posts WHERE id = ?").get(id) as Post | undefined;
 }
+
+/** Scored videos published since `sinceIso` that no digest has shown yet. */
+export function selectableVideos(db: Db, sinceIso: string): Video[] {
+  return db
+    .prepare(
+      `SELECT * FROM videos WHERE score IS NOT NULL AND shown_in IS NULL AND published_at >= ?
+       ORDER BY published_at DESC`,
+    )
+    .all(sinceIso) as Video[];
+}
+
+/** Scored posts created since `sinceIso` that no digest has shown yet. */
+export function selectablePosts(db: Db, sinceIso: string): Post[] {
+  return db
+    .prepare(
+      `SELECT * FROM posts WHERE score IS NOT NULL AND shown_in IS NULL AND created_at >= ?
+       ORDER BY created_at DESC`,
+    )
+    .all(sinceIso) as Post[];
+}
