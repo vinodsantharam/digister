@@ -102,5 +102,7 @@ describe("writeDigest", () => {
     expect(readFileSync(file, "utf8")).toBe("<!doctype html>hi");
     expect(readFileSync(path.join(dir, "latest.html"), "utf8")).toBe("<!doctype html>hi");
     expect(readdirSync(dir).sort()).toEqual(["digest-2026-11-03.html", "latest.html"]);
+    expect(path.basename(writeDigest("second", dir, "2026-11-03"))).toBe("digest-2026-11-03-2.html");
+    expect(readFileSync(file, "utf8")).toBe("<!doctype html>hi");
   });
 });

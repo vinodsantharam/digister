@@ -304,3 +304,15 @@ Done when: a fresh clone can follow the README to a first digest.
 - X can change its web app or flag automated reading; when capture stops working, `doctor` and the digest header say so, and YouTube keeps working.
 - RSS feeds return only about the 15 newest videos per channel, which is enough for a daily run but means a machine that is off for weeks misses older uploads.
 - Small local models misjudge some videos from the description alone; the must-tier bonus keeps your chosen channels on top.
+
+## Implementation notes
+
+Where the build diverged from the tasks above:
+
+- **`videos.must_watch` column (T11/T13):** the schema has an extra `must_watch INTEGER` column so the model's flag, after the code-enforced cap of `must_watch_max`, survives until selection. `openDb` adds it to databases created before it existed.
+- **Zero scores are never selected (T12/T13):** muted items, replies to others and posts merged into a thread get score 0 and are excluded by `select.ts`. A merged self-thread is stored in its first post (text joined).
+- **Pinned posts (T8/T9):** `parseTimeline` marks tweets inside a `TimelinePinEntry` (or a `pinned-` entry id) with `pinned: true`; capture ignores them when checking the lookback.
+- **Second run on the same day (T14):** `write.ts` writes `digest-YYYY-MM-DD-2.html` instead of overwriting the first digest; `latest.html` is refreshed either way.
+- **`run --dry` (T15):** uses an in-memory database, so it also creates no `digister.db` and takes no lock. It does not check Ollama.
+- **Not implemented:** "at most one run per day by default" (T-decisions) is not enforced; the lock only prevents overlapping runs.
+- **Scripts (T16):** `shellcheck` was not available when they were written; they were only syntax-checked with `bash -n` and exercised against stub `launchctl`/`systemctl`. The Windows script has not been run anywhere.

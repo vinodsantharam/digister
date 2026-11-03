@@ -96,7 +96,9 @@ describe("runPipeline", () => {
     // A second run has nothing new to show.
     const again = await runPipeline({}, deps({ llm: { model: new MockLanguageModelV4({ doGenerate: async () => reply({ items: [] }) }) } }));
     expect(again.exitCode).toBe(0);
-    expect(readFileSync(path.join(out, "digest-2026-11-03.html"), "utf8")).not.toContain("Local LLMs are here");
+    expect(readFileSync(path.join(out, "digest-2026-11-03.html"), "utf8")).toContain("Local LLMs are here");
+    expect(readFileSync(path.join(out, "digest-2026-11-03-2.html"), "utf8")).not.toContain("Local LLMs are here");
+    expect(readFileSync(path.join(out, "latest.html"), "utf8")).not.toContain("Local LLMs are here");
   });
 
   it("still writes a digest, with a header warning, when X needs login", async () => {
