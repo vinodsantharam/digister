@@ -1,0 +1,6 @@
+# Copy to ~/.digister/config/interests.yaml (or ./config/interests.yaml) and edit.
+topics:
+  - name: "Local AI and agents"
+    weight: 1.0
+    description: "open-weight model releases, agent frameworks, running LLMs locally"
+mute: ["giveaway", "engagement bait"]

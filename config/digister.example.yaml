@@ -1,0 +1,20 @@
+# Copy to ~/.digister/config/digister.yaml (or ./config/digister.yaml) and edit.
+output_dir: "~/Library/Mobile Documents/com~apple~CloudDocs/Digister"   # any folder synced to the phone
+ollama:
+  base_url: "http://localhost:11434"
+  chat_model: "qwen3:8b"
+x:
+  enabled: true
+  list_urls: ["https://x.com/i/lists/1234567890"]
+  include_following: false        # also read the Following (chronological) timeline
+  max_posts_per_run: 300
+  lookback_hours: 30
+  headless: true
+  graphql_operations: ["ListLatestTweetsTimeline", "HomeLatestTimeline", "TweetDetail"]
+youtube:
+  lookback_hours: 36
+  data_api_key: ""               # optional, free; leave empty to skip enrichment
+digest:
+  must_watch_max: 3
+  posts_max: 20
+  reading_minutes: 25
