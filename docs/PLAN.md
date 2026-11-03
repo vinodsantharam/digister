@@ -12,6 +12,15 @@ Three choices drive the plan:
 - **YouTube is cheap.** Subscriptions and new uploads fit easily in the free API quota. Transcripts are the hard part, because the official captions download only works for videos you own.
 - **The agent does the editing, not the plumbing.** Fetching and storage are plain code; the LLM agent ranks, summarizes, and writes the digest. That keeps a small local model on the work it is good at.
 
+## Decision 2026-11-03: free-only build
+
+The budget is zero, so v1 changes the plan below as follows. The build tasks are in [TASKS.md](TASKS.md).
+
+- **X:** Playwright opens your X List in a browser profile you logged into once, and reads the timeline JSON that the X web app itself receives. Digister never builds X API requests, so X's rotating query IDs and request signing don't break it (unlike cookie CLIs such as OpenClaw's bird). It uses your own account and goes against X's terms, a risk you accepted. It runs once a day with slow, human-like scrolling.
+- **YouTube:** public channel RSS feeds, with no API key or sign-in. Your channel list comes from your picks plus an optional Google Takeout import, and your top channels are marked `must`. YouTube Premium gives no API benefit, so it isn't used.
+- **No transcripts:** "Must watch today" is chosen from the title, description, channel tier and your interests. A free YouTube Data API key can optionally add durations to filter out Shorts.
+- **Unchanged:** Node/TypeScript, Vercel AI SDK, Ollama, SQLite, and the HTML digest in a phone-synced folder.
+
 ## Data access realities
 
 Both sources need an OAuth sign-in once, with tokens kept in the OS keychain or a local `.env` that is never committed. Only X costs money.
