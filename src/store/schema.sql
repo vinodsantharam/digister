@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS videos (
   score REAL,
   reason TEXT,
   scored_at TEXT,
-  shown_in TEXT
+  shown_in TEXT,
+  must_watch INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS posts (

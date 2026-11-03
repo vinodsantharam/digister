@@ -21,6 +21,8 @@ export interface Video {
   reason: string | null;
   scored_at: string | null;
   shown_in: string | null;
+  /** 1 when the scorer flagged it "must watch today" (after the overall cap), else 0/null. */
+  must_watch: number | null;
 }
 
 export interface Post {
@@ -50,7 +52,7 @@ export interface Post {
 /** Fields the caller provides; scoring and bookkeeping columns are filled by the store. */
 export type VideoInput = Omit<
   Video,
-  "first_seen_at" | "score" | "reason" | "scored_at" | "shown_in" | "duration_s" | "view_count" | "is_short" | "thumbnail_url" | "description"
+  "first_seen_at" | "score" | "reason" | "scored_at" | "shown_in" | "must_watch" | "duration_s" | "view_count" | "is_short" | "thumbnail_url" | "description"
 > &
   Partial<Pick<Video, "first_seen_at" | "duration_s" | "view_count" | "is_short" | "thumbnail_url" | "description">>;
 
@@ -69,6 +71,9 @@ export function openDb(file: string = getPaths().db): Db {
   const db = new Database(file);
   db.pragma("journal_mode = WAL");
   db.exec(readFileSync(new URL("./schema.sql", import.meta.url), "utf8"));
+  // Databases created before must_watch existed: add the column once.
+  const cols = db.prepare("PRAGMA table_info(videos)").all() as { name: string }[];
+  if (!cols.some((c) => c.name === "must_watch")) db.exec("ALTER TABLE videos ADD COLUMN must_watch INTEGER");
   return db;
 }
 
@@ -147,11 +152,12 @@ export function unscoredPosts(db: Db, sinceIso: string): Post[] {
     .all(sinceIso) as Post[];
 }
 
-export function setVideoScore(db: Db, id: string, score: number, reason: string): void {
-  db.prepare("UPDATE videos SET score = ?, reason = ?, scored_at = ? WHERE id = ?").run(
+export function setVideoScore(db: Db, id: string, score: number, reason: string, mustWatch = false): void {
+  db.prepare("UPDATE videos SET score = ?, reason = ?, scored_at = ?, must_watch = ? WHERE id = ?").run(
     score,
     reason,
     now(),
+    mustWatch ? 1 : 0,
     id,
   );
 }
