@@ -4,11 +4,8 @@ import { loadChannels, loadDigisterConfig } from "./config.js";
 import { fetchAllFeeds } from "./sources/youtube/rss.js";
 import { ollamaHealthy } from "./llm/client.js";
 import { xCheck, xLogin } from "./sources/x/browser.js";
+import { runPipeline } from "./pipeline/run.js";
 import { importChannels } from "./sources/youtube/channels.js";
-
-const notImplemented = () => {
-  console.log("not implemented");
-};
 
 export function buildProgram(): Command {
   const program = new Command("digister").description(
@@ -19,7 +16,10 @@ export function buildProgram(): Command {
     .command("run")
     .description("Collect, score and write today's digest")
     .option("--dry", "fetch YouTube only, print counts, no LLM calls or writes")
-    .action(notImplemented);
+    .action(async (opts: { dry?: boolean }) => {
+      const r = await runPipeline({ dry: opts.dry });
+      process.exitCode = r.exitCode;
+    });
 
   const x = program.command("x").description("X source");
   x.command("login")
