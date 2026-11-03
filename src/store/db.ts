@@ -223,3 +223,12 @@ export function setVideoEnrichment(
     `UPDATE videos SET duration_s = ?, view_count = ?, is_short = COALESCE(is_short, ?) WHERE id = ?`,
   ).run(e.duration_s, e.view_count, e.is_short ? 1 : 0, id);
 }
+
+/** Replace a post's text (used when a self-thread is merged into its first post). */
+export function setPostText(db: Db, id: string, text: string): void {
+  db.prepare("UPDATE posts SET text = ? WHERE id = ?").run(text, id);
+}
+
+export function getPost(db: Db, id: string): Post | undefined {
+  return db.prepare("SELECT * FROM posts WHERE id = ?").get(id) as Post | undefined;
+}
