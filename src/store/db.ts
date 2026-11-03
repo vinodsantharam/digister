@@ -201,3 +201,19 @@ export function finishRun(db: Db, id: number, r: RunResult): void {
        digest_path = ?, error = ? WHERE id = ?`,
   ).run(now(), r.status, r.x_posts_seen ?? 0, r.videos_seen ?? 0, r.digest_path ?? null, r.error ?? null, id);
 }
+
+/** Ids of videos with no duration yet (candidates for API enrichment). */
+export function videoIdsWithoutDuration(db: Db): string[] {
+  return (db.prepare("SELECT id FROM videos WHERE duration_s IS NULL").all() as { id: string }[]).map((r) => r.id);
+}
+
+/** Set duration and view count; is_short is only set when it was still unknown. */
+export function setVideoEnrichment(
+  db: Db,
+  id: string,
+  e: { duration_s: number; view_count: number | null; is_short: boolean },
+): void {
+  db.prepare(
+    `UPDATE videos SET duration_s = ?, view_count = ?, is_short = COALESCE(is_short, ?) WHERE id = ?`,
+  ).run(e.duration_s, e.view_count, e.is_short ? 1 : 0, id);
+}
