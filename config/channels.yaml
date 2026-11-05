@@ -1,0 +1,8 @@
+# tier drives priority: must | high | normal
+channels:
+  - id: "UCswG6FSbgZjbWtdf_hMLaow"
+    name: "Matt Pocock"
+    tier: must
+  - id: "UCsBjURrPoezykLs9EqgamOA"
+    name: "Fireship"
+    tier: must

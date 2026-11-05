@@ -1,0 +1,29 @@
+{
+  "_comment": "HAND-WRITTEN fixture following the YouTube Data API v3 videos.list (part=contentDetails,statistics) response shape.",
+  "kind": "youtube#videoListResponse",
+  "etag": "handwritten",
+  "items": [
+    {
+      "kind": "youtube#video",
+      "etag": "a",
+      "id": "aaaaaaaaa01",
+      "contentDetails": { "duration": "PT1H2M3S", "dimension": "2d", "definition": "hd", "caption": "false", "licensedContent": true, "projection": "rectangular" },
+      "statistics": { "viewCount": "250000", "likeCount": "12000", "favoriteCount": "0", "commentCount": "800" }
+    },
+    {
+      "kind": "youtube#video",
+      "etag": "b",
+      "id": "bbbbbbbbb02",
+      "contentDetails": { "duration": "PT58S", "dimension": "2d", "definition": "hd", "caption": "false", "licensedContent": true, "projection": "rectangular" },
+      "statistics": { "viewCount": "48000", "likeCount": "900", "favoriteCount": "0", "commentCount": "10" }
+    },
+    {
+      "kind": "youtube#video",
+      "etag": "c",
+      "id": "ccccccccc03",
+      "contentDetails": { "duration": "PT12M", "dimension": "2d", "definition": "hd", "caption": "false", "licensedContent": true, "projection": "rectangular" },
+      "statistics": {}
+    }
+  ],
+  "pageInfo": { "totalResults": 3, "resultsPerPage": 3 }
+}
