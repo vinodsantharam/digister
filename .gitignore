@@ -157,3 +157,6 @@ out/
 .digister/
 x-profile/
 raw/
+
+# Claude Code worktrees
+.claude/worktrees/
