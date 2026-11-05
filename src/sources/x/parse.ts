@@ -41,6 +41,34 @@ function author(tweet: Obj): { handle?: string; name?: string } {
   };
 }
 
+const ENTITIES: Record<string, string> = { "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'" };
+/** `legacy.full_text` arrives HTML-escaped (`&amp;`); note tweet text does not. */
+const decodeEntities = (s: string): string => s.replace(/&(?:amp|lt|gt|quot|#39);/g, (m) => ENTITIES[m] ?? m);
+
+/**
+ * Tidy tweet text: swap t.co short links for their real address, drop the t.co links that only
+ * stand for attached media or the quoted tweet, and remove any unresolved trailing t.co link.
+ */
+function cleanText(text: string, entities: unknown, quotedId: string | null): string {
+  let out = text;
+  const list = (k: string): unknown[] => {
+    const v = get(entities, k);
+    return Array.isArray(v) ? v : [];
+  };
+  for (const m of list("media")) {
+    const u = str(get(m, "url"));
+    if (u) out = out.split(u).join("");
+  }
+  for (const e of list("urls")) {
+    const short = str(get(e, "url"));
+    const full = str(get(e, "expanded_url"));
+    if (!short) continue;
+    const isQuoteLink = !!quotedId && !!full && new RegExp(`^https?://(?:www\\.)?(?:x|twitter)\\.com/[^/]+/status/${quotedId}(?:[/?#]|$)`).test(full);
+    out = out.split(short).join(isQuoteLink ? "" : full ?? short);
+  }
+  return out.replace(/\s*https:\/\/t\.co\/\w+\s*$/, "").trim();
+}
+
 function toPost(tweet: Obj, source: string | null, quotedId: string | null): ParsedPost | undefined {
   const id = str(tweet.rest_id);
   const legacy = isObj(tweet.legacy) ? tweet.legacy : undefined;
@@ -48,7 +76,12 @@ function toPost(tweet: Obj, source: string | null, quotedId: string | null): Par
   const created = xDateToIso(str(legacy?.created_at));
   if (!id || !legacy || !handle || !created) return undefined;
 
-  const text = str(get(tweet, "note_tweet", "note_tweet_results", "result", "text")) ?? str(legacy.full_text) ?? "";
+  const quoted = quotedId ?? str(legacy.quoted_status_id_str) ?? null;
+  const note = get(tweet, "note_tweet", "note_tweet_results", "result");
+  const noteText = str(get(note, "text"));
+  const text = noteText
+    ? cleanText(noteText, get(note, "entity_set"), quoted)
+    : cleanText(decodeEntities(str(legacy.full_text) ?? ""), legacy.entities, quoted);
   const urls = get(legacy, "entities", "urls");
   const links = Array.isArray(urls)
     ? urls.map((u) => str(get(u, "expanded_url"))).filter((u): u is string => !!u)
@@ -69,7 +102,7 @@ function toPost(tweet: Obj, source: string | null, quotedId: string | null): Par
     created_at: created,
     lang: str(legacy.lang) ?? null,
     reply_to_id: str(legacy.in_reply_to_status_id_str) ?? null,
-    quoted_id: quotedId ?? str(legacy.quoted_status_id_str) ?? null,
+    quoted_id: quoted,
     conversation_id: str(legacy.conversation_id_str) ?? null,
     like_count: num(legacy.favorite_count),
     repost_count: num(legacy.retweet_count),
