@@ -152,3 +152,8 @@ node_modules
 .env
 out/
 *.db
+
+# Local Digister state (browser profile, db, logs) if DIGISTER_HOME points inside the repo
+.digister/
+x-profile/
+raw/
