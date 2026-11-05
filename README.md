@@ -31,38 +31,36 @@ Do these in order.
    npm install
    npx playwright install chromium
    ```
-4. **Copy the example configs** into Digister's home folder (`~/.digister`, or wherever `DIGISTER_HOME` points):
+4. **Create a private X List** with the 30 to 80 accounts you care about, open it in a browser and copy its address (like `https://x.com/i/lists/1234567890`). The wizard asks for it next.
+5. **Run the setup wizard:**
    ```
-   mkdir -p ~/.digister/config
-   cp config/digister.example.yaml ~/.digister/config/digister.yaml
-   cp config/interests.example.yaml ~/.digister/config/interests.yaml
-   cp config/channels.example.yaml ~/.digister/config/channels.yaml
+   npx tsx src/cli.ts setup
    ```
-   Digister looks in `~/.digister/config/` first, then in `./config/` of the folder you run it from.
-5. **Edit `digister.yaml`:** set `output_dir` to a folder that syncs to your phone, and set `x.list_urls` to your X List (below).
-6. **Create a private X List** with the 30 to 80 accounts you care about, open it in a browser and paste its address (like `https://x.com/i/lists/1234567890`) into `x.list_urls`.
-7. **Add your channels.** `config/channels.yaml` already lists Matt Pocock and Fireship as `must` channels. Add more one at a time, or import everything you subscribe to:
+   It creates `~/.digister/config/` (or wherever `DIGISTER_HOME` points), copies the example configs without overwriting anything you already have, asks for the folder that syncs to your phone and for your X List address (press Enter to skip X), writes them into `digister.yaml` with its comments intact, runs the doctor checks and prints the next steps. It is safe to run again. Digister looks in `~/.digister/config/` first, then in `./config/` of the folder you run it from.
+
+   To do it by hand instead: `mkdir -p ~/.digister/config`, copy `config/digister.example.yaml`, `config/interests.example.yaml` and `config/channels.yaml` there (dropping `.example` from the names), then set `output_dir` and `x.list_urls` in `digister.yaml`.
+6. **Add your channels.** `config/channels.yaml` already lists Matt Pocock and Fireship as `must` channels. Add more one at a time, or import everything you subscribe to:
    ```
    npx tsx src/cli.ts youtube import --url @somechannel --tier must
    npx tsx src/cli.ts youtube import --takeout path/to/subscriptions.csv
    ```
    The Takeout file comes from Google Takeout (YouTube and YouTube Music, subscriptions). Imports never change channels you already have; Takeout channels are added as `normal`.
-8. **Log in to X once:**
+7. **Log in to X once:**
    ```
    npx tsx src/cli.ts x login
    ```
    A browser window opens. Log in yourself, then press Enter in the terminal. Digister never sees or stores your password.
-9. **Check everything:**
+8. **Check everything:**
    ```
    npx tsx src/cli.ts doctor
    ```
-10. **Try it without side effects**, then do the first real run:
+9. **Try it without side effects**, then do the first real run:
     ```
     npx tsx src/cli.ts run --dry
     npx tsx src/cli.ts run
     ```
     Open `digest-<today>.html` from your output folder.
-11. **Install the daily schedule** (below).
+10. **Install the daily schedule** (below).
 
 You can also run `node bin/digister.mjs <command>` or `npm link` to get a `digister` command. Examples above use `npx tsx src/cli.ts` so they work straight after `npm install`.
 

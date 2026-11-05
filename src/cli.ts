@@ -6,6 +6,7 @@ import { formatChecks, runDoctor } from "./doctor.js";
 import { xCheck, xLogin } from "./sources/x/browser.js";
 import { runPipeline } from "./pipeline/run.js";
 import { importChannels } from "./sources/youtube/channels.js";
+import { runSetup, terminalIO } from "./setup.js";
 
 export function buildProgram(): Command {
   const program = new Command("digister").description(
@@ -91,6 +92,21 @@ export function buildProgram(): Command {
       } catch (err) {
         console.error((err as Error).message);
         process.exitCode = 1;
+      }
+    });
+
+  program
+    .command("setup")
+    .description("Interactive first-time setup: config files, output folder, X List")
+    .action(async () => {
+      const io = terminalIO();
+      try {
+        await runSetup({ io });
+      } catch (err) {
+        console.error((err as Error).message);
+        process.exitCode = 1;
+      } finally {
+        io.close();
       }
     });
 
