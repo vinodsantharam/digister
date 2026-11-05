@@ -88,14 +88,14 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<Check[]> {
     add("Output folder", ok ? "ok" : "fail", ok ? cfg.output_dir : `${cfg.output_dir} is not writable`);
 
     if (!cfg.x.enabled) add("X session", "warn", "X is disabled in digister.yaml");
-    else if (!hasFiles(getPaths().xProfile)) add("X session", "fail", "no X profile yet; run `digister x login`");
+    else if (!hasFiles(getPaths().xProfile)) add("X session", "fail", "no X profile yet; run `digister x login` or `digister x import-cookies`");
     else {
       try {
         const state = await (deps.xCheck ?? xCheck)({ headless: cfg.x.headless });
         add(
           "X session",
           state === "logged_in" ? "ok" : "fail",
-          state === "logged_in" ? "logged in" : state === "logged_out" ? "logged out; run `digister x login`" : "blocked (challenge page or HTTP error); open the profile headed and resolve it",
+          state === "logged_in" ? "logged in" : state === "logged_out" ? "logged out; run `digister x login` or `digister x import-cookies`" : "blocked (challenge page or HTTP error); open the profile headed and resolve it",
         );
       } catch (err) {
         add("X session", "fail", (err as Error).message);

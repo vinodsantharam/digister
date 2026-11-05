@@ -3,7 +3,9 @@ import { TierSchema } from "./config.js";
 import { loadChannels, loadDigisterConfig } from "./config.js";
 import { fetchAllFeeds } from "./sources/youtube/rss.js";
 import { formatChecks, runDoctor } from "./doctor.js";
-import { xCheck, xLogin } from "./sources/x/browser.js";
+import { readFileSync } from "node:fs";
+import { createInterface } from "node:readline/promises";
+import { buildXCookies, parseCookieExport, xCheck, xImportCookies, xLogin } from "./sources/x/browser.js";
 import { runPipeline } from "./pipeline/run.js";
 import { importChannels } from "./sources/youtube/channels.js";
 import { runSetup, terminalIO } from "./setup.js";
@@ -32,6 +34,39 @@ export function buildProgram(): Command {
           console.error("No auth_token cookie found: login not completed. Run `digister x login` again.");
           process.exitCode = 1;
         }
+      } catch (err) {
+        console.error((err as Error).message);
+        process.exitCode = 1;
+      }
+    });
+  x.command("import-cookies")
+    .description("Copy your X session (auth_token, ct0) from your normal browser")
+    .option("--file <path>", "Cookie-Editor JSON export instead of pasting values")
+    .action(async (opts: { file?: string }) => {
+      try {
+        let cookies;
+        if (opts.file) {
+          cookies = parseCookieExport(readFileSync(opts.file, "utf8"));
+        } else {
+          console.log("In your normal browser: open x.com, DevTools > Application > Cookies > https://x.com");
+          const rl = createInterface({ input: process.stdin, output: process.stdout });
+          try {
+            const auth = await rl.question("auth_token value: ");
+            const ct0 = await rl.question("ct0 value: ");
+            cookies = buildXCookies(auth, ct0);
+          } finally {
+            rl.close();
+          }
+        }
+        const state = await xImportCookies(cookies);
+        console.log(
+          state === "logged_in"
+            ? "X: logged in (session saved in the Digister profile)"
+            : state === "logged_out"
+              ? "X: cookies saved but X says logged out; copy fresh values while logged in and try again"
+              : "X: blocked (challenge page or HTTP error); open x.com in your browser and resolve it",
+        );
+        if (state !== "logged_in") process.exitCode = 1;
       } catch (err) {
         console.error((err as Error).message);
         process.exitCode = 1;
