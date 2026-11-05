@@ -74,6 +74,16 @@ function PostCard({ p }: { p: Post }) {
   );
 }
 
+/** `1 post`, `2 posts`. */
+export const plural = (n: number, noun: string): string => `${n} ${noun}${n === 1 ? "" : "s"}`;
+
+/** Local, human-readable time like `Nov 5, 05:31`; the raw string if it is not a date. */
+export function formatGenerated(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+}
+
 export function Digest({ data }: { data: DigestData }) {
   const postCount = data.groups.reduce((n, g) => n + g.posts.length, 0);
   const toc: { id: string; label: string }[] = [];
@@ -94,7 +104,7 @@ export function Digest({ data }: { data: DigestData }) {
           <header>
             <h1>Digest {data.date}</h1>
             <div className="meta">
-              {data.mustWatch.length + data.alsoNew.length} videos · {postCount} posts · about {data.readingMinutes} min of reading
+              {plural(data.mustWatch.length + data.alsoNew.length, "video")} · {plural(postCount, "post")} · about {data.readingMinutes} min of reading
             </div>
             {data.warnings.map((w) => (
               <div className="warn" key={w} role="alert">
@@ -153,7 +163,7 @@ export function Digest({ data }: { data: DigestData }) {
             </section>
           ) : null}
           <footer>
-            Generated {data.generatedAt} · {data.filtered} items filtered out
+            Generated {formatGenerated(data.generatedAt)} · {plural(data.filtered, "item")} filtered out
           </footer>
         </main>
       </body>

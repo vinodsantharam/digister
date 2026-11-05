@@ -2,9 +2,12 @@ import { mkdtempSync, readFileSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { formatDuration, renderDigest, safeUrl, type DigestData } from "../src/render/Digest.js";
+import { formatDuration, formatGenerated, plural, renderDigest, safeUrl, type DigestData } from "../src/render/Digest.js";
 import { writeDigest } from "../src/render/write.js";
 import type { Post, Video } from "../src/store/db.js";
+
+// The footer shows local time; pin the zone so the snapshot is stable.
+process.env.TZ = "UTC";
 
 const video = (id: string, over: Partial<Video> = {}): Video => ({
   id, channel_id: "C", channel_name: "Fireship", title: `Title ${id}`, description: "Desc ".repeat(100),
@@ -104,5 +107,24 @@ describe("writeDigest", () => {
     expect(readdirSync(dir).sort()).toEqual(["digest-2026-11-03.html", "latest.html"]);
     expect(path.basename(writeDigest("second", dir, "2026-11-03"))).toBe("digest-2026-11-03-2.html");
     expect(readFileSync(file, "utf8")).toBe("<!doctype html>hi");
+  });
+});
+
+describe("pluralisation and generated time", () => {
+  it("pluralises counts", () => {
+    expect(plural(1, "post")).toBe("1 post");
+    expect(plural(0, "video")).toBe("0 videos");
+    expect(plural(2, "item")).toBe("2 items");
+  });
+  it("renders singular counts and a readable time in the digest", () => {
+    const html = renderDigest({ ...data, alsoNew: [], filtered: 1 });
+    expect(html).toContain("1 video");
+    expect(html).not.toContain("1 videos");
+    expect(html).toContain("1 post");
+    expect(html).toContain("Generated Nov 3, 05:30 · 1 item filtered out");
+  });
+  it("formats local time and tolerates junk", () => {
+    expect(formatGenerated("2026-11-05T05:31:12.000Z")).toBe("Nov 5, 05:31");
+    expect(formatGenerated("not a date")).toBe("not a date");
   });
 });
