@@ -1,7 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
+import type { DigestBrief, Story } from "../pipeline/brief.js";
 import type { PostGroup } from "../pipeline/select.js";
 import type { Post, Video } from "../store/db.js";
-import { CSS } from "./styles.js";
+import { CSS, EMAIL_CSS } from "./styles.js";
+
+export type DigestVariant = "page" | "email";
 
 export interface DigestData {
   /** YYYY-MM-DD */
@@ -16,6 +19,8 @@ export interface DigestData {
   readingMinutes: number;
   /** Items dropped before the digest (muted, Shorts, replies...), for the footer. */
   filtered: number;
+  /** When set, X posts are shown as headlines + stories instead of `groups`. */
+  brief?: DigestBrief | null;
 }
 
 /** Only http(s) links are rendered as links; anything else becomes "#". */
@@ -57,7 +62,7 @@ function VideoCard({ v }: { v: Video }) {
   );
 }
 
-function PostCard({ p }: { p: Post }) {
+function PostCard({ p, email }: { p: Post; email: boolean }) {
   return (
     <article className="card">
       <div className="meta">
@@ -65,17 +70,53 @@ function PostCard({ p }: { p: Post }) {
         {p.source ? ` · ${p.source}` : ""}
       </div>
       <p>{p.summary}</p>
-      <details>
-        <summary>Original text</summary>
-        <p>{p.text}</p>
-      </details>
+      {email ? null : (
+        <details>
+          <summary>Original text</summary>
+          <p>{p.text}</p>
+        </details>
+      )}
       <a href={safeUrl(p.url)}>Open on X</a>
     </article>
   );
 }
 
+function StoryCard({ s }: { s: Story }) {
+  return (
+    <article className="card story">
+      <h4>{s.title}</h4>
+      <p>{s.body}</p>
+      <div className="meta">
+        {s.sources.length > 1 ? `${s.sources.length} posts · ` : ""}
+        {s.sources.map((p, i) => (
+          <span key={p.id}>
+            {i ? " · " : ""}
+            <a href={safeUrl(p.url)}>@{p.author_handle}</a>
+          </span>
+        ))}
+      </div>
+    </article>
+  );
+}
+
+/** Stories grouped by topic, keeping the order normalizeBrief gave them. */
+function storyGroups(stories: Story[]): { topic: string; stories: Story[] }[] {
+  const groups: { topic: string; stories: Story[] }[] = [];
+  for (const s of stories) {
+    const last = groups.at(-1);
+    if (last && last.topic === s.topic) last.stories.push(s);
+    else groups.push({ topic: s.topic, stories: [s] });
+  }
+  return groups;
+}
+
+const postCountOf = (data: DigestData): number =>
+  data.brief
+    ? data.brief.stories.reduce((n, s) => n + s.sources.length, 0) + data.brief.leftovers.length
+    : data.groups.reduce((n, g) => n + g.posts.length, 0);
+
 /** `1 post`, `2 posts`. */
-export const plural = (n: number, noun: string): string => `${n} ${noun}${n === 1 ? "" : "s"}`;
+export const plural = (n: number, noun: string, many = `${noun}s`): string => `${n} ${n === 1 ? noun : many}`;
 
 /** Local, human-readable time like `Nov 5, 05:31`; the raw string if it is not a date. */
 export function formatGenerated(iso: string): string {
@@ -84,12 +125,21 @@ export function formatGenerated(iso: string): string {
   return d.toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 }
 
-export function Digest({ data }: { data: DigestData }) {
-  const postCount = data.groups.reduce((n, g) => n + g.posts.length, 0);
+export function Digest({ data, variant = "page" }: { data: DigestData; variant?: DigestVariant }) {
+  const email = variant === "email";
+  const brief = data.brief ?? null;
+  const postCount = postCountOf(data);
   const toc: { id: string; label: string }[] = [];
+  if (brief) toc.push({ id: "today", label: "Today in 60 seconds" });
   if (data.mustWatch.length) toc.push({ id: "must-watch", label: `Must watch today (${data.mustWatch.length})` });
-  if (postCount) toc.push({ id: "x-posts", label: `X posts (${postCount})` });
+  if (brief) {
+    toc.push({ id: "stories", label: `Stories (${brief.stories.length})` });
+    if (brief.leftovers.length) toc.push({ id: "more-posts", label: `More posts (${brief.leftovers.length})` });
+  } else if (postCount) toc.push({ id: "x-posts", label: `X posts (${postCount})` });
   if (data.alsoNew.length) toc.push({ id: "also-new", label: `Also new from your channels (${data.alsoNew.length})` });
+  const summaryLine = brief
+    ? `${plural(data.mustWatch.length + data.alsoNew.length, "video")} · ${plural(brief.stories.length, "story", "stories")} from ${plural(postCount, "post")}`
+    : `${plural(data.mustWatch.length + data.alsoNew.length, "video")} · ${plural(postCount, "post")} · about ${data.readingMinutes} min of reading`;
   return (
     <html lang="en">
       <head>
@@ -97,15 +147,14 @@ export function Digest({ data }: { data: DigestData }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{`Digest ${data.date}`}</title>
         {/* Constant stylesheet, never source text. */}
-        <style dangerouslySetInnerHTML={{ __html: CSS }} />
+        <style dangerouslySetInnerHTML={{ __html: email ? EMAIL_CSS : CSS }} />
       </head>
       <body>
+        {email && brief?.headlines[0] ? <div className="preheader">{brief.headlines[0]}</div> : null}
         <main>
           <header>
             <h1>Digest {data.date}</h1>
-            <div className="meta">
-              {plural(data.mustWatch.length + data.alsoNew.length, "video")} · {plural(postCount, "post")} · about {data.readingMinutes} min of reading
-            </div>
+            <div className="meta">{summaryLine}</div>
             {data.warnings.map((w) => (
               <div className="warn" key={w} role="alert">
                 {w}
@@ -125,6 +174,16 @@ export function Digest({ data }: { data: DigestData }) {
           ) : (
             <p>Nothing new worth your time today.</p>
           )}
+          {brief ? (
+            <section id="today">
+              <h2>Today in 60 seconds</h2>
+              <ul className="headlines">
+                {brief.headlines.map((h) => (
+                  <li key={h}>{h}</li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
           {data.mustWatch.length ? (
             <section id="must-watch">
               <h2>Must watch today</h2>
@@ -133,14 +192,41 @@ export function Digest({ data }: { data: DigestData }) {
               ))}
             </section>
           ) : null}
-          {postCount ? (
+          {brief ? (
+            <>
+              <section id="stories">
+                <h2>Stories</h2>
+                {storyGroups(brief.stories).map((g) => (
+                  <div key={g.topic} id={slug(g.topic)}>
+                    <h3>{g.topic}</h3>
+                    {g.stories.map((s) => (
+                      <StoryCard s={s} key={s.sources[0]!.id} />
+                    ))}
+                  </div>
+                ))}
+              </section>
+              {brief.leftovers.length ? (
+                <section id="more-posts">
+                  <h2>More posts</h2>
+                  <ul className="compact">
+                    {brief.leftovers.map((p) => (
+                      <li key={p.id}>
+                        <a href={safeUrl(p.url)}>{p.summary || p.text.slice(0, 140)}</a>
+                        <div className="meta">@{p.author_handle}</div>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+            </>
+          ) : postCount ? (
             <section id="x-posts">
               <h2>X posts</h2>
               {data.groups.map((g) => (
                 <div key={g.topic} id={slug(g.topic)}>
                   <h3>{g.topic}</h3>
                   {g.posts.map((p) => (
-                    <PostCard p={p} key={p.id} />
+                    <PostCard p={p} key={p.id} email={email} />
                   ))}
                 </div>
               ))}
@@ -171,7 +257,35 @@ export function Digest({ data }: { data: DigestData }) {
   );
 }
 
-export function renderDigest(data: DigestData): string {
+export function renderDigest(data: DigestData, opts: { variant?: DigestVariant } = {}): string {
   // React prints the prop name charSet; the lowercase attribute is the conventional spelling.
-  return `<!doctype html>${renderToStaticMarkup(<Digest data={data} />).replace("<meta charSet=", "<meta charset=")}`;
+  return `<!doctype html>${renderToStaticMarkup(<Digest data={data} variant={opts.variant} />).replace("<meta charSet=", "<meta charset=")}`;
+}
+
+/** Plain-text version for the email's text part: headlines, story titles and links. */
+export function renderDigestText(data: DigestData): string {
+  const lines: string[] = [`Digest ${data.date}`, ""];
+  for (const w of data.warnings) lines.push(`! ${w}`);
+  if (data.warnings.length) lines.push("");
+  if (data.brief) {
+    lines.push("TODAY IN 60 SECONDS", ...data.brief.headlines.map((h) => `- ${h}`), "");
+  }
+  if (data.mustWatch.length) {
+    lines.push("MUST WATCH TODAY", ...data.mustWatch.map((v) => `- ${v.title} (${v.channel_name})\n  ${safeUrl(v.url)}`), "");
+  }
+  if (data.brief) {
+    lines.push("STORIES");
+    for (const s of data.brief.stories) {
+      lines.push(`- ${s.title}`, `  ${s.body}`, ...s.sources.map((p) => `  @${p.author_handle}: ${safeUrl(p.url)}`));
+    }
+    lines.push("");
+  } else {
+    for (const g of data.groups) {
+      lines.push(g.topic.toUpperCase(), ...g.posts.map((p) => `- ${p.summary ?? ""} (@${p.author_handle})\n  ${safeUrl(p.url)}`), "");
+    }
+  }
+  if (data.alsoNew.length) {
+    lines.push("ALSO NEW", ...data.alsoNew.map((v) => `- ${v.title}\n  ${safeUrl(v.url)}`), "");
+  }
+  return lines.join("\n");
 }

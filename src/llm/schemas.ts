@@ -18,6 +18,20 @@ export const PostScore = z.object({
 export const VideoScoreBatch = z.object({ items: z.array(VideoScore) });
 export const PostScoreBatch = z.object({ items: z.array(PostScore) });
 
+/** The morning brief: headline bullets plus stories that merge posts about the same thing. */
+export const Brief = z.object({
+  headlines: z.array(z.string().max(140)).min(1).max(5),
+  stories: z.array(
+    z.object({
+      topic: z.string(),
+      title: z.string().max(90),
+      body: z.string().max(450),
+      post_ids: z.array(z.string()).min(1),
+    }),
+  ),
+});
+
+export type Brief = z.infer<typeof Brief>;
 export type VideoScore = z.infer<typeof VideoScore>;
 export type PostScore = z.infer<typeof PostScore>;
 export type VideoScoreBatch = z.infer<typeof VideoScoreBatch>;

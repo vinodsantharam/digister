@@ -5,6 +5,7 @@ import path from "node:path";
 import { loadChannels, loadDigisterConfig, loadInterests, type DigisterConfig } from "./config.js";
 import { ollamaHealthy, type OllamaStatus } from "./llm/client.js";
 import { getPaths } from "./paths.js";
+import { verifyEmail } from "./deliver/email.js";
 import { xCheck } from "./sources/x/browser.js";
 
 export type CheckStatus = "ok" | "warn" | "fail";
@@ -19,6 +20,8 @@ export interface DoctorDeps {
   platform?: NodeJS.Platform;
   health?: () => Promise<OllamaStatus>;
   xCheck?: (o: { headless: boolean }) => Promise<"logged_in" | "logged_out" | "blocked">;
+  /** Password readable and SMTP login accepted; throws otherwise. */
+  verifyEmail?: (cfg: DigisterConfig["email"]) => Promise<void>;
   /** Exit status of the OS schedule query; true when the schedule is installed. */
   scheduleInstalled?: (platform: NodeJS.Platform) => boolean;
 }
@@ -99,6 +102,18 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<Check[]> {
         );
       } catch (err) {
         add("X session", "fail", (err as Error).message);
+      }
+    }
+  }
+
+  if (cfg) {
+    if (!cfg.email.enabled) add("Email", "warn", "email is off (email.enabled in digister.yaml)");
+    else {
+      try {
+        await (deps.verifyEmail ?? verifyEmail)(cfg.email);
+        add("Email", "ok", `SMTP login works; digests go to ${cfg.email.to}`);
+      } catch (err) {
+        add("Email", "fail", (err as Error).message);
       }
     }
   }

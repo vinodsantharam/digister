@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { formatDuration, formatGenerated, plural, renderDigest, safeUrl, type DigestData } from "../src/render/Digest.js";
+import { formatDuration, formatGenerated, plural, renderDigest, renderDigestText, safeUrl, type DigestData } from "../src/render/Digest.js";
 import { writeDigest } from "../src/render/write.js";
 import type { Post, Video } from "../src/store/db.js";
 
@@ -126,5 +126,45 @@ describe("pluralisation and generated time", () => {
   it("formats local time and tolerates junk", () => {
     expect(formatGenerated("2026-11-05T05:31:12.000Z")).toBe("Nov 5, 05:31");
     expect(formatGenerated("not a date")).toBe("not a date");
+  });
+});
+
+describe("brief rendering", () => {
+  const brief = {
+    headlines: ["Qwen 4 is out", "AI SDK 7 changes tools"],
+    stories: [
+      { topic: "AI", title: "Qwen 4 released", body: "Three people tested it.", sources: [post("p1"), post("p2", { author_handle: "bob" })] },
+    ],
+    leftovers: [post("p3", { summary: "A side note." })],
+  };
+  const withBrief: DigestData = { ...data, groups: [], brief };
+
+  it("shows headlines, stories with source links and leftovers instead of post cards", () => {
+    const html = renderDigest(withBrief);
+    expect(html).toContain("Today in 60 seconds");
+    expect(html).toContain("<li>Qwen 4 is out</li>");
+    expect(html).toContain("2 posts · ");
+    expect(html).toContain('<a href="https://x.com/alice/status/p2">@bob</a>');
+    expect(html).toContain("More posts (1)");
+    expect(html).toContain("1 story from 3 posts");
+    expect(html).not.toContain("Open on X");
+    expect(balanced(html)).toBe(true);
+    expect(html).toMatchSnapshot();
+  });
+
+  it("email variant has no CSS variables or details, and a preheader with the first headline", () => {
+    const html = renderDigest(withBrief, { variant: "email" });
+    expect(html).not.toContain("var(");
+    expect(html).not.toContain("<details");
+    expect(html).toContain('<div class="preheader">Qwen 4 is out</div>');
+    expect(balanced(html)).toBe(true);
+    expect(renderDigest({ ...data }, { variant: "email" })).not.toContain("<details");
+  });
+
+  it("plain text lists headlines, stories and links", () => {
+    const text = renderDigestText(withBrief);
+    expect(text).toContain("TODAY IN 60 SECONDS\n- Qwen 4 is out");
+    expect(text).toContain("- Qwen 4 released\n  Three people tested it.\n  @alice: https://x.com/alice/status/p1");
+    expect(text).toContain("! X needs login");
   });
 });

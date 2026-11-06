@@ -48,6 +48,20 @@ export function selectVideos(
   return { mustWatch, alsoNew };
 }
 
+/**
+ * Posts for the brief: best first, score >= `brief_min_score`, at most `brief_posts_max`.
+ * No reading budget, because the brief replaces reading each post.
+ */
+export function selectBriefPosts(
+  posts: Post[],
+  digest: Pick<DigisterConfig["digest"], "brief_posts_max" | "brief_min_score">,
+): Post[] {
+  return usable(posts)
+    .filter((p) => (p.score ?? 0) >= digest.brief_min_score)
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+    .slice(0, digest.brief_posts_max);
+}
+
 const words = (s: string): number => s.split(/\s+/).filter(Boolean).length;
 
 /** Minutes to read a post: its summary plus its original text at 200 words per minute. */

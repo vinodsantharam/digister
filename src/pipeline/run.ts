@@ -8,7 +8,8 @@ import {
 import { getLogger } from "../log.js";
 import { ollamaHealthy, type OllamaStatus, type StructuredDeps } from "../llm/client.js";
 import { getPaths } from "../paths.js";
-import { renderDigest, type DigestData } from "../render/Digest.js";
+import { digestSubject, sendDigestEmail, type MailTransport } from "../deliver/email.js";
+import { renderDigest, renderDigestText, type DigestData } from "../render/Digest.js";
 import { writeDigest } from "../render/write.js";
 import { collectVideos } from "../sources/youtube/rss.js";
 import { enrichVideos } from "../sources/youtube/enrich.js";
@@ -21,7 +22,8 @@ import {
 import { isMuted } from "./common.js";
 import { scorePosts } from "./score-posts.js";
 import { scoreVideos } from "./score-videos.js";
-import { selectPosts, selectVideos } from "./select.js";
+import { buildBrief, type DigestBrief } from "./brief.js";
+import { selectBriefPosts, selectPosts, selectVideos } from "./select.js";
 
 export interface RunOptions {
   /** Read YouTube only; no LLM calls, no X, no writes except logs. */
@@ -38,6 +40,22 @@ export interface RunDeps {
   startOllama?: () => Promise<void>;
   now?: () => Date;
   out?: (line: string) => void;
+  /** SMTP transport for the email step; defaults to nodemailer with the configured server. */
+  mailTransport?: MailTransport;
+}
+
+/** Keep the brief's model output next to the raw X payloads, for debugging. Never fails the run. */
+function saveBrief(brief: DigestBrief, date: string): void {
+  try {
+    const slim = {
+      headlines: brief.headlines,
+      stories: brief.stories.map((s) => ({ ...s, sources: s.sources.map((p) => p.id) })),
+      leftovers: brief.leftovers.map((p) => p.id),
+    };
+    writeFileSync(path.join(getPaths().raw, `brief-${date}.json`), JSON.stringify(slim, null, 2));
+  } catch (err) {
+    getLogger().warn({ err: (err as Error).message }, "could not save brief json");
+  }
 }
 
 export interface RunOutcome {
@@ -231,17 +249,48 @@ async function execute(deps: RunDeps, out: (line: string) => void): Promise<RunO
     if (vs.unscored) warnings.push(`${vs.unscored} videos could not be scored by the model`);
     if (ps.unscored) warnings.push(`${ps.unscored} posts could not be scored by the model`);
 
-    // Select, render, write
+    // Select, brief, render, write
     const vsel = selectVideos(selectableVideos(db, videoSince), channels, cfg.digest);
-    const psel = selectPosts(selectablePosts(db, postSince), interests, cfg.digest);
+    const candidates = selectablePosts(db, postSince);
+    let brief: DigestBrief | null = null;
+    if (cfg.digest.mode === "brief") {
+      const briefPosts = selectBriefPosts(candidates, cfg.digest);
+      if (briefPosts.length) {
+        brief = await buildBrief(briefPosts, interests, deps.llm);
+        if (brief) saveBrief(brief, date);
+        else warnings.push("The brief could not be written by the model; showing the post list instead");
+      }
+    }
+    const psel = brief ? { groups: [], readingMinutes: 0 } : selectPosts(candidates, interests, cfg.digest);
     const data: DigestData = {
       date, generatedAt: now.toISOString(), warnings, mustWatch: vsel.mustWatch, alsoNew: vsel.alsoNew,
-      groups: psel.groups, readingMinutes: psel.readingMinutes, filtered,
+      groups: psel.groups, readingMinutes: psel.readingMinutes, filtered, brief,
     };
     const digestPath = writeDigest(renderDigest(data), cfg.output_dir, date);
 
+    if (cfg.email.enabled) {
+      try {
+        await sendDigestEmail(
+          {
+            subject: digestSubject(date, brief?.headlines[0]),
+            html: renderDigest(data, { variant: "email" }),
+            text: renderDigestText(data),
+          },
+          cfg.email,
+          { transport: deps.mailTransport },
+        );
+        out(`Digest emailed to ${cfg.email.to}`);
+      } catch (err) {
+        log.error({ err: (err as Error).message }, "email failed");
+        warnings.push(`Email failed: ${(err as Error).message}`);
+      }
+    }
+
+    const shownPosts = brief
+      ? [...brief.stories.flatMap((s) => s.sources), ...brief.leftovers]
+      : psel.groups.flatMap((g) => g.posts);
     markShown(db, "video", [...vsel.mustWatch, ...vsel.alsoNew].map((v) => v.id), date);
-    markShown(db, "post", psel.groups.flatMap((g) => g.posts.map((p) => p.id)), date);
+    markShown(db, "post", shownPosts.map((p) => p.id), date);
     finishRun(db, runId, {
       status: warnings.length ? "ok_with_warnings" : "ok", x_posts_seen: xPostsSeen, videos_seen: videosSeen, digest_path: digestPath,
     });

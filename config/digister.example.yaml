@@ -16,5 +16,16 @@ youtube:
   data_api_key: ""               # optional, free; leave empty to skip enrichment
 digest:
   must_watch_max: 3
-  posts_max: 20
-  reading_minutes: 25
+  mode: brief                    # brief: headlines + stories written by the model; list: one card per post
+  brief_posts_max: 40            # brief mode: best posts the model reads
+  brief_min_score: 5             # brief mode: posts below this score are left out
+  posts_max: 20                  # list mode only
+  reading_minutes: 25            # list mode only
+email:
+  enabled: false                 # true: email the digest every run
+  to: ""                         # your address
+  from: ""                       # empty = same as to
+  smtp_host: smtp.gmail.com
+  smtp_port: 465
+  smtp_user: ""                  # empty = same as to
+  # The password is never stored here: save it to ~/.digister/smtp-password (chmod 600)

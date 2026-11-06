@@ -36,8 +36,26 @@ const DigisterSchema = z.object({
       must_watch_max: z.number().int().nonnegative().default(3),
       posts_max: z.number().int().nonnegative().default(20),
       reading_minutes: z.number().positive().default(25),
+      /** "brief": headlines + stories written by the model; "list": one card per post. */
+      mode: z.enum(["brief", "list"]).default("brief"),
+      brief_posts_max: z.number().int().positive().default(40),
+      brief_min_score: z.number().min(0).max(10).default(5),
     })
     .prefault({}),
+  email: z
+    .object({
+      enabled: z.boolean().default(false),
+      to: z.string().default(""),
+      from: z.string().default(""),
+      smtp_host: z.string().default("smtp.gmail.com"),
+      smtp_port: z.number().int().positive().default(465),
+      smtp_user: z.string().default(""),
+    })
+    .prefault({})
+    .refine((e) => !e.enabled || /^[^@\s]+@[^@\s]+$/.test(e.to), {
+      message: "email.to must be an email address when email.enabled is true",
+      path: ["to"],
+    }),
 });
 
 export const TierSchema = z.enum(["must", "high", "normal"]);
