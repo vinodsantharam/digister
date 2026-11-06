@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  '@ai-sdk/provider': 4.0.35
+
 importers:
 
   .:
@@ -86,10 +89,6 @@ packages:
 
   '@ai-sdk/provider@4.0.35':
     resolution: {integrity: sha512-yBz6fmLS8MSCIzy7NiHEUAq56ZLD4ZA1GR6bpXBxgbwUacP1La7LuwAr/xy9jSzthem4F8Xu2OrhvU/JrE9fYA==}
-    engines: {node: '>=22'}
-
-  '@ai-sdk/provider@4.0.36':
-    resolution: {integrity: sha512-GqvWZSZdBelCGughlBdOoupT258rgM3YMbaLAS9WSZJ0vlt8c9vm3My+ZT31mYhiReMCMCF2qF2axnGbILpk1A==}
     engines: {node: '>=22'}
 
   '@esbuild/aix-ppc64@0.28.2':
@@ -942,7 +941,7 @@ snapshots:
 
   '@ai-sdk/provider-utils@5.0.75(zod@4.6.7)':
     dependencies:
-      '@ai-sdk/provider': 4.0.36
+      '@ai-sdk/provider': 4.0.35
       '@standard-schema/spec': 1.1.0
       '@workflow/serde': 4.1.0
       eventsource-parser: 3.1.1
@@ -950,10 +949,6 @@ snapshots:
       zod: 4.6.7
 
   '@ai-sdk/provider@4.0.35':
-    dependencies:
-      json-schema: 0.4.0
-
-  '@ai-sdk/provider@4.0.36':
     dependencies:
       json-schema: 0.4.0
 
@@ -1349,7 +1344,7 @@ snapshots:
 
   ollama-ai-provider-v2@4.1.0(ai@7.0.162(zod@4.6.7))(zod@4.6.7):
     dependencies:
-      '@ai-sdk/provider': 4.0.36
+      '@ai-sdk/provider': 4.0.35
       '@ai-sdk/provider-utils': 5.0.75(zod@4.6.7)
       ai: 7.0.162(zod@4.6.7)
       zod: 4.6.7
