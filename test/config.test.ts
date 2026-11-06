@@ -46,7 +46,7 @@ describe("config", () => {
 
   it("defaults to brief mode with email off, and needs an address when email is on", () => {
     const cfg = loadDigisterConfig(tmpConfig({ "digister.yaml": 'output_dir: "/tmp/x"\n' }));
-    expect(cfg.digest).toMatchObject({ mode: "brief", brief_posts_max: 40, brief_min_score: 5 });
+    expect(cfg.digest).toMatchObject({ mode: "brief", brief_posts_max: 25, brief_min_score: 5 });
     expect(cfg.email).toMatchObject({ enabled: false, smtp_host: "smtp.gmail.com", smtp_port: 465 });
     expect(loadDigisterConfig(example).email.enabled).toBe(false);
     const on = tmpConfig({ "digister.yaml": 'output_dir: "/tmp/x"\nemail:\n  enabled: true\n' });

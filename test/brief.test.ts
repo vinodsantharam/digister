@@ -70,6 +70,38 @@ describe("normalizeBrief", () => {
     );
     expect(b.stories.map((s) => `${s.topic}:${s.title}`)).toEqual(["AI:High AI", "AI:Low AI", "Tooling:Tools", "other:Other"]);
   });
+
+  it("turns quick hits into one-liners, with the same id rules, best score first", () => {
+    const b = normalizeBrief(
+      {
+        headlines: ["h"],
+        stories: [{ topic: "AI", title: "One", body: "", post_ids: ["a"] }],
+        quick_hits: [
+          { post_id: "d", line: " Low \n news " },
+          { post_id: "a", line: "already in a story" },
+          { post_id: "nope", line: "unknown" },
+          { post_id: "b", line: "High news" },
+          { post_id: "c", line: "  " },
+        ],
+      },
+      posts,
+      interests,
+    );
+    expect(b.quickHits.map((q) => [q.post.id, q.line])).toEqual([["b", "High news"], ["d", "Low news"]]);
+    expect(b.leftovers.map((p) => p.id)).toEqual(["c"]);
+  });
+
+});
+
+describe("brief system prompt", () => {
+  it("asks the model to place every post in a story or a quick hit", async () => {
+    const model = new MockLanguageModelV4({
+      doGenerate: async () => reply({ headlines: ["h"], stories: [{ topic: "AI", title: "t", body: "", post_ids: ["a"] }] }),
+    });
+    await buildBrief(posts, interests, { model });
+    const sent = JSON.stringify(model.doGenerateCalls[0]!.prompt);
+    expect(sent).toContain("Every post id you were given must appear exactly once");
+  });
 });
 
 describe("buildBrief", () => {

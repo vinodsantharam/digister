@@ -29,9 +29,15 @@ export const Brief = z.object({
       post_ids: z.array(z.string()).min(1),
     }),
   ),
+  /** Minor posts: one line each, so nothing falls back to a raw post list. */
+  quick_hits: z
+    .array(z.object({ post_id: z.string(), line: z.string().max(140) }))
+    .default([]),
 });
 
 export type Brief = z.infer<typeof Brief>;
+/** What the model may send: `quick_hits` can be missing. */
+export type BriefInput = z.input<typeof Brief>;
 export type VideoScore = z.infer<typeof VideoScore>;
 export type PostScore = z.infer<typeof PostScore>;
 export type VideoScoreBatch = z.infer<typeof VideoScoreBatch>;

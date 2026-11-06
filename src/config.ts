@@ -38,7 +38,7 @@ const DigisterSchema = z.object({
       reading_minutes: z.number().positive().default(25),
       /** "brief": headlines + stories written by the model; "list": one card per post. */
       mode: z.enum(["brief", "list"]).default("brief"),
-      brief_posts_max: z.number().int().positive().default(40),
+      brief_posts_max: z.number().int().positive().default(25),
       brief_min_score: z.number().min(0).max(10).default(5),
     })
     .prefault({}),

@@ -112,8 +112,11 @@ function storyGroups(stories: Story[]): { topic: string; stories: Story[] }[] {
 
 const postCountOf = (data: DigestData): number =>
   data.brief
-    ? data.brief.stories.reduce((n, s) => n + s.sources.length, 0) + data.brief.leftovers.length
+    ? data.brief.stories.reduce((n, s) => n + s.sources.length, 0) + data.brief.quickHits.length + data.brief.leftovers.length
     : data.groups.reduce((n, g) => n + g.posts.length, 0);
+
+/** The brief shows only this many skipped posts; the rest are counted in a line. */
+export const LEFTOVERS_SHOWN = 5;
 
 /** `1 post`, `2 posts`. */
 export const plural = (n: number, noun: string, many = `${noun}s`): string => `${n} ${n === 1 ? noun : many}`;
@@ -134,7 +137,8 @@ export function Digest({ data, variant = "page" }: { data: DigestData; variant?:
   if (data.mustWatch.length) toc.push({ id: "must-watch", label: `Must watch today (${data.mustWatch.length})` });
   if (brief) {
     toc.push({ id: "stories", label: `Stories (${brief.stories.length})` });
-    if (brief.leftovers.length) toc.push({ id: "more-posts", label: `More posts (${brief.leftovers.length})` });
+    if (brief.quickHits.length) toc.push({ id: "quick-hits", label: `Quick hits (${brief.quickHits.length})` });
+    if (brief.leftovers.length) toc.push({ id: "more-posts", label: "More posts" });
   } else if (postCount) toc.push({ id: "x-posts", label: `X posts (${postCount})` });
   if (data.alsoNew.length) toc.push({ id: "also-new", label: `Also new from your channels (${data.alsoNew.length})` });
   const summaryLine = brief
@@ -205,17 +209,32 @@ export function Digest({ data, variant = "page" }: { data: DigestData; variant?:
                   </div>
                 ))}
               </section>
+              {brief.quickHits.length ? (
+                <section id="quick-hits">
+                  <h2>Quick hits</h2>
+                  <ul className="compact">
+                    {brief.quickHits.map((q) => (
+                      <li key={q.post.id}>
+                        {q.line} <a href={safeUrl(q.post.url)}>@{q.post.author_handle}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
               {brief.leftovers.length ? (
                 <section id="more-posts">
                   <h2>More posts</h2>
                   <ul className="compact">
-                    {brief.leftovers.map((p) => (
+                    {brief.leftovers.slice(0, LEFTOVERS_SHOWN).map((p) => (
                       <li key={p.id}>
                         <a href={safeUrl(p.url)}>{p.summary || p.text.slice(0, 140)}</a>
                         <div className="meta">@{p.author_handle}</div>
                       </li>
                     ))}
                   </ul>
+                  {brief.leftovers.length > LEFTOVERS_SHOWN ? (
+                    <p className="meta">{`${plural(brief.leftovers.length - LEFTOVERS_SHOWN, "more post")} skipped.`}</p>
+                  ) : null}
                 </section>
               ) : null}
             </>
@@ -279,6 +298,9 @@ export function renderDigestText(data: DigestData): string {
       lines.push(`- ${s.title}`, `  ${s.body}`, ...s.sources.map((p) => `  @${p.author_handle}: ${safeUrl(p.url)}`));
     }
     lines.push("");
+    if (data.brief.quickHits.length) {
+      lines.push("QUICK HITS", ...data.brief.quickHits.map((q) => `- ${q.line} (@${q.post.author_handle})\n  ${safeUrl(q.post.url)}`), "");
+    }
   } else {
     for (const g of data.groups) {
       lines.push(g.topic.toUpperCase(), ...g.posts.map((p) => `- ${p.summary ?? ""} (@${p.author_handle})\n  ${safeUrl(p.url)}`), "");

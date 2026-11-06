@@ -50,6 +50,7 @@ function saveBrief(brief: DigestBrief, date: string): void {
     const slim = {
       headlines: brief.headlines,
       stories: brief.stories.map((s) => ({ ...s, sources: s.sources.map((p) => p.id) })),
+      quick_hits: brief.quickHits.map((q) => ({ line: q.line, post: q.post.id })),
       leftovers: brief.leftovers.map((p) => p.id),
     };
     writeFileSync(path.join(getPaths().raw, `brief-${date}.json`), JSON.stringify(slim, null, 2));
@@ -287,7 +288,7 @@ async function execute(deps: RunDeps, out: (line: string) => void): Promise<RunO
     }
 
     const shownPosts = brief
-      ? [...brief.stories.flatMap((s) => s.sources), ...brief.leftovers]
+      ? [...brief.stories.flatMap((s) => s.sources), ...brief.quickHits.map((q) => q.post), ...brief.leftovers]
       : psel.groups.flatMap((g) => g.posts);
     markShown(db, "video", [...vsel.mustWatch, ...vsel.alsoNew].map((v) => v.id), date);
     markShown(db, "post", shownPosts.map((p) => p.id), date);

@@ -1,7 +1,7 @@
 import type { InterestsConfig } from "../config.js";
 import { getLogger } from "../log.js";
 import { generateStructured, type StructuredDeps } from "../llm/client.js";
-import { Brief } from "../llm/schemas.js";
+import { Brief, type BriefInput } from "../llm/schemas.js";
 import type { Post } from "../store/db.js";
 import { interestsBlock } from "./common.js";
 
@@ -15,10 +15,17 @@ export interface Story {
   sources: Post[];
 }
 
+export interface QuickHit {
+  line: string;
+  post: Post;
+}
+
 export interface DigestBrief {
   headlines: string[];
   stories: Story[];
-  /** Posts sent to the model that no story covers; shown as one-line links. */
+  /** Minor posts, one line each written by the model, best score first. */
+  quickHits: QuickHit[];
+  /** Posts the model skipped entirely, best score first; the page shows only a few. */
   leftovers: Post[];
 }
 
@@ -27,8 +34,11 @@ const SYSTEM = [
   "Step 1, group: posts that mention the same product, model, release, company or event belong to ONE story, even when they add different details (for example a release, its benchmarks and a tool adding support for it are one story). Never write two stories about the same subject.",
   "Step 2, write: each story gets a plain title (max 90 characters) and a neutral body of 2 or 3 sentences (max 450 characters) that combines the details from all its posts. Name people as @handle.",
   "Step 3, headlines: 3 to 5 one-line bullets (max 140 characters each), one per story, for the most important stories for this person's interests, most important first. Each headline is about a different story.",
-  "Set each story's topic to exactly one of the interest names, or \"other\". List the ids of all the posts each story is based on, using only ids you were given.",
-  "No hype, no emojis, no opinions of your own. Leave out posts that are not worth a story.",
+  "Step 4, quick hits: every post that is not part of a story becomes a quick hit: one plain line (max 140 characters) saying what is new, not a copy of the post.",
+  "Every post id you were given must appear exactly once: in one story's post_ids, or as one quick hit's post_id. Use only ids you were given.",
+  "Write stories only for news that matters to this person (usually 3 to 8); everything else is a quick hit.",
+  "Set each story's topic to exactly one of the interest names, or \"other\".",
+  "No hype, no emojis, no opinions of your own.",
 ].join(" ");
 
 const oneLine = (s: string) => s.replace(/\s+/g, " ").trim();
@@ -52,9 +62,9 @@ export function briefPrompt(posts: Post[], interests: InterestsConfig): string {
 /**
  * Pure: turn the model's answer into a brief the page can trust. Unknown ids are dropped,
  * each post belongs to one story only, stories with no posts left are dropped, unknown topics
- * become "other", and stories are ordered by interests.yaml topic order, then by best post score.
+ * become "other", quick hits follow the same id rules, and stories are ordered by interests.yaml topic order, then by best post score.
  */
-export function normalizeBrief(raw: Brief, posts: Post[], interests: InterestsConfig): DigestBrief {
+export function normalizeBrief(raw: BriefInput, posts: Post[], interests: InterestsConfig): DigestBrief {
   const byId = new Map(posts.map((p) => [p.id, p] as const));
   const used = new Set<string>();
   const order = interests.topics.map((t) => t.name);
@@ -79,13 +89,24 @@ export function normalizeBrief(raw: Brief, posts: Post[], interests: InterestsCo
       sources,
     });
   }
+  const byScore = (a: Post, b: Post) => (b.score ?? 0) - (a.score ?? 0);
+  const quickHits: QuickHit[] = [];
+  for (const q of raw.quick_hits ?? []) {
+    const p = byId.get(q.post_id);
+    const line = oneLine(q.line);
+    if (!p || used.has(p.id) || !line) continue;
+    used.add(p.id);
+    quickHits.push({ line, post: p });
+  }
+  quickHits.sort((a, b) => byScore(a.post, b.post));
   const best = (s: Story) => Math.max(...s.sources.map((p) => p.score ?? 0));
   stories.sort((a, b) => rank(a.topic) - rank(b.topic) || best(b) - best(a));
   return {
     // One headline per story at most: small models tend to repeat a story as extra headlines.
     headlines: [...new Set(raw.headlines.map((h) => h.trim()).filter(Boolean))].slice(0, Math.max(1, stories.length)),
     stories,
-    leftovers: posts.filter((p) => !used.has(p.id)),
+    quickHits,
+    leftovers: posts.filter((p) => !used.has(p.id)).sort(byScore),
   };
 }
 
