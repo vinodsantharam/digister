@@ -20,7 +20,10 @@ Reading X this way is against X's terms of service. X can change its page withou
 
 Do these in order.
 
-1. **Install Node 22 or newer** from nodejs.org.
+1. **Install Node 22 or newer** from nodejs.org, then turn on pnpm (the project uses pnpm, not npm):
+   ```
+   corepack enable pnpm
+   ```
 2. **Install Ollama** from ollama.com, then pull the model (about 5 GB):
    ```
    ollama pull qwen3:8b
@@ -28,47 +31,48 @@ Do these in order.
 3. **Install the project:**
    ```
    git clone <this repo> digister && cd digister
-   npm install
-   npx playwright install chromium
+   pnpm install
+   pnpm exec playwright install chromium
    ```
+   `pnpm-workspace.yaml` already approves the `better-sqlite3` native build, so no build prompt should appear. If you see `Could not locate the bindings file`, run `pnpm rebuild better-sqlite3`.
 4. **Create a private X List** with the 30 to 80 accounts you care about, open it in a browser and copy its address (like `https://x.com/i/lists/1234567890`). The wizard asks for it next.
 5. **Run the setup wizard:**
    ```
-   npx tsx src/cli.ts setup
+   pnpm dev setup
    ```
    It creates `~/.digister/config/` (or wherever `DIGISTER_HOME` points), copies the example configs without overwriting anything you already have, asks for the folder that syncs to your phone and for your X List address (press Enter to skip X), writes them into `digister.yaml` with its comments intact, runs the doctor checks and prints the next steps. It is safe to run again. Digister looks in `~/.digister/config/` first, then in `./config/` of the folder you run it from.
 
    To do it by hand instead: `mkdir -p ~/.digister/config`, copy `config/digister.example.yaml`, `config/interests.example.yaml` and `config/channels.yaml` there (dropping `.example` from the names), then set `output_dir` and `x.list_urls` in `digister.yaml`.
 6. **Add your channels.** `config/channels.yaml` already lists Matt Pocock and Fireship as `must` channels. Add more one at a time, or import everything you subscribe to:
    ```
-   npx tsx src/cli.ts youtube import --url @somechannel --tier must
-   npx tsx src/cli.ts youtube import --takeout path/to/subscriptions.csv
+   pnpm dev youtube import --url @somechannel --tier must
+   pnpm dev youtube import --takeout path/to/subscriptions.csv
    ```
    The Takeout file comes from Google Takeout (YouTube and YouTube Music, subscriptions). Imports never change channels you already have; Takeout channels are added as `normal`.
 7. **Log in to X once:**
    ```
-   npx tsx src/cli.ts x login
+   pnpm dev x login
    ```
    A browser window opens. Log in yourself, then press Enter in the terminal. Digister never sees or stores your password.
 
    **If login in that window fails** (for example Google or Apple sign-in says the browser is not secure), copy your session from your normal browser instead. Open x.com there while logged in, then DevTools > Application > Cookies > `https://x.com`, and copy the values of `auth_token` and `ct0`. Then run:
    ```
-   npx tsx src/cli.ts x import-cookies
+   pnpm dev x import-cookies
    ```
    and paste the two values when asked. You can also pass a JSON export from a cookie extension like Cookie-Editor: `x import-cookies --file cookies.json`. These two cookies are your logged-in session: never share them, and delete the export file afterwards. Logging out of X in your normal browser ends the session, so if you do that, import fresh values.
 8. **Check everything:**
    ```
-   npx tsx src/cli.ts doctor
+   pnpm dev doctor
    ```
 9. **Try it without side effects**, then do the first real run:
     ```
-    npx tsx src/cli.ts run --dry
-    npx tsx src/cli.ts run
+    pnpm dev run --dry
+    pnpm dev run
     ```
     Open `digest-<today>.html` from your output folder.
 10. **Install the daily schedule** (below).
 
-You can also run `node bin/digister.mjs <command>` or `npm link` to get a `digister` command. Examples above use `npx tsx src/cli.ts` so they work straight after `npm install`.
+`pnpm dev <command>` runs `tsx src/cli.ts <command>`, so it works straight after `pnpm install`. You can also run `node bin/digister.mjs <command>`, or `pnpm link --global` to get a `digister` command.
 
 ## Config files
 
@@ -126,8 +130,8 @@ Start with `doctor`; it names the failing piece.
 ## Development
 
 ```
-npm run typecheck
-npm test
+pnpm typecheck
+pnpm test
 ```
 
 Tests use recorded fixtures and mocked models; none touch the network.
