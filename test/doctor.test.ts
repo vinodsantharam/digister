@@ -28,7 +28,8 @@ describe("runDoctor", () => {
     mkdirSync(path.join(home, "x-profile"), { recursive: true });
     writeFileSync(path.join(home, "x-profile", "Local State"), "{}");
     const cs = await runDoctor({ health: healthy, xCheck: async () => "logged_in", scheduleInstalled: () => true });
-    expect(cs.filter((c) => c.status !== "ok")).toEqual([]);
+    expect(cs.filter((c) => c.status !== "ok" && c.name !== "Email")).toEqual([]);
+    expect(by(cs, "Email")).toMatchObject({ status: "warn" });
     expect(by(cs, "Channels").detail).toBe("1 channels");
     expect(formatChecks(cs)).toContain("[ok  ] Ollama");
   });

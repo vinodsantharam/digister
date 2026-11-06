@@ -91,15 +91,35 @@ All three live in `~/.digister/config/`.
 | `x.graphql_operations` | Names of the X requests to read. Change these if X renames them. |
 | `x.lookback_hours`, `youtube.lookback_hours` | How far back to look. |
 | `youtube.data_api_key` | Optional free key; adds durations. Leave empty to skip. |
-| `digest.must_watch_max`, `posts_max`, `reading_minutes` | Size of the digest. |
+| `digest.mode` | `brief` (default): the model writes "Today in 60 seconds" headlines and short stories that merge posts about the same thing. `list`: one card per post. |
+| `digest.brief_posts_max`, `brief_min_score` | Brief mode: how many of the best posts the model reads (40) and the lowest score let in (5). |
+| `digest.must_watch_max`, `posts_max`, `reading_minutes` | Size of the digest (`posts_max` and `reading_minutes` apply to list mode). |
+| `email.enabled`, `email.to` | Email each digest to this address. See "Email to your phone". |
+| `email.smtp_host`, `smtp_port`, `smtp_user`, `from` | SMTP server; defaults suit Gmail. `smtp_user` and `from` default to `to`. |
 
 **`channels.yaml`** lists channels as `id`, `name`, `tier`. The tier is `must`, `high` or `normal`: must-tier videos get +2 on their score, high +1, and only must and high channels appear in "Also new from your channels". Must-tier Shorts are still considered; other Shorts are skipped.
 
 **`interests.yaml`** lists `topics` (name, weight, description) that the model scores against, and a `mute` list of phrases. Anything containing a muted phrase is dropped before the model sees it.
 
+## Email to your phone
+
+Instead of opening a file, you can get the digest in Mail or Gmail every morning. Links open straight in the X and YouTube apps, and the first headline shows in the notification.
+
+1. With Gmail: turn on 2-Step Verification, then create an app password at myaccount.google.com/apppasswords. Other providers work too; set `email.smtp_host` and `smtp_port`.
+2. Save the password where only you can read it. It never goes in `digister.yaml`:
+   ```
+   printf '%s' 'the-app-password' > ~/.digister/smtp-password && chmod 600 ~/.digister/smtp-password
+   ```
+   (`DIGISTER_SMTP_PASSWORD` also works, but the daily schedule does not see shell variables, so the file is easier.)
+3. In `digister.yaml` set `email.enabled: true` and `email.to: you@gmail.com`, or answer the email question in `digister setup`.
+4. Check it: `pnpm dev email test`, then `pnpm dev doctor` (the Email line logs in to the SMTP server).
+
+If sending fails, the run still writes the HTML file and the error shows in the output and the log.
+
 ## Daily use
 
-- Open `latest.html` on your phone. Sections: must watch today, X posts grouped by topic, and other new videos. Thumbnails load when you are online.
+- Read the email, or open `latest.html`. Sections: "Today in 60 seconds" (the headlines), must watch today, stories by topic with the posts they came from, more posts in one line each, and other new videos. Thumbnails load when you are online.
+- If the model cannot write the brief, the digest falls back to one card per post and says so at the top.
 - Each item is shown once. Anything that appeared in a digest is not repeated.
 - A second run on the same day writes `digest-<date>-2.html` (and updates `latest.html`) so the first one is kept; it only holds what is new since. Run it once a day.
 - Only one run can happen at a time (a `run.lock` file in the Digister home). A lock left by a crashed run is replaced automatically once its process is gone.

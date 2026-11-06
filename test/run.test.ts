@@ -50,6 +50,11 @@ const model = () =>
   new MockLanguageModelV4({
     doGenerate: async (opts) => {
       const text = JSON.stringify(opts.prompt);
+      if (text.includes("morning briefing"))
+        return reply({
+          headlines: ["Alice ships a thing"],
+          stories: [{ topic: "AI", title: "Alice ships", body: "Alice released a tool today.", post_ids: ["p1"] }],
+        });
       if (text.includes("Posts:"))
         return reply({ items: [{ id: "p1", score: 8, topic: "AI", summary: "Alice ships a thing." }] });
       return reply({ items: [{ id: "vid1", score: 8, must_watch: true, reason: "Great match" }] });
@@ -83,7 +88,10 @@ describe("runPipeline", () => {
     expect(existsSync(path.join(out, "latest.html"))).toBe(true);
     expect(html).toContain("Local LLMs are here");
     expect(html).toContain("Great match");
-    expect(html).toContain("Alice ships a thing.");
+    expect(html).toContain("Today in 60 seconds");
+    expect(html).toContain("Alice released a tool today.");
+    expect(html).toContain('href="https://x.com/alice/status/p1">@alice</a>');
+    expect(existsSync(path.join(home, "raw", "brief-2026-11-03.json"))).toBe(true);
     expect(html).not.toContain("giveaway");
     expect(html.toLowerCase()).not.toContain("<script");
     expect(existsSync(path.join(home, "run.lock"))).toBe(false);
@@ -179,6 +187,45 @@ describe("runPipeline", () => {
     const r = await runPipeline({}, deps());
     expect(r.exitCode).toBe(1);
     expect(lines.join("\n")).toContain("output_dir");
+  });
+
+  it("falls back to the post list with a warning when the brief fails", async () => {
+    const noBrief = new MockLanguageModelV4({
+      doGenerate: async (opts) => {
+        const text = JSON.stringify(opts.prompt);
+        if (text.includes("morning briefing")) return reply({ nonsense: true });
+        if (text.includes("Posts:")) return reply({ items: [{ id: "p1", score: 8, topic: "AI", summary: "Alice ships a thing." }] });
+        return reply({ items: [{ id: "vid1", score: 8, must_watch: true, reason: "Great match" }] });
+      },
+    });
+    const r = await runPipeline({}, deps({ llm: { model: noBrief } }));
+    expect(r.exitCode).toBe(0);
+    const html = readFileSync(path.join(out, "digest-2026-11-03.html"), "utf8");
+    expect(html).toContain("The brief could not be written");
+    expect(html).toContain("Alice ships a thing.");
+    expect(html).not.toContain("Today in 60 seconds");
+  });
+
+  it("emails the digest when email is enabled, and only warns when sending fails", async () => {
+    writeFileSync(
+      path.join(home, "config", "digister.yaml"),
+      `output_dir: "${out}"\nx:\n  list_urls: ["https://x.com/i/lists/1"]\nemail:\n  enabled: true\n  to: "me@example.com"\n`,
+    );
+    const sent: { to: string; subject: string; html: string; text: string }[] = [];
+    const transport = { sendMail: async (m: (typeof sent)[number]) => void sent.push(m), verify: async () => true };
+    const r = await runPipeline({}, deps({ mailTransport: transport }));
+    expect(r.exitCode).toBe(0);
+    expect(sent).toHaveLength(1);
+    expect(sent[0]!.to).toBe("me@example.com");
+    expect(sent[0]!.subject).toBe("Digest Nov 3 · Alice ships a thing");
+    expect(sent[0]!.html).toContain('class="preheader"');
+    expect(sent[0]!.html).not.toContain("var(");
+    expect(sent[0]!.text).toContain("- Alice ships a thing");
+
+    const broken = { sendMail: async () => { throw new Error("535 bad login"); }, verify: async () => true };
+    const r2 = await runPipeline({}, deps({ mailTransport: broken }));
+    expect(r2.exitCode).toBe(0);
+    expect(r2.warnings.join("\n")).toContain("Email failed: 535 bad login");
   });
 });
 

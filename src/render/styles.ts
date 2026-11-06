@@ -26,4 +26,38 @@ details p{white-space:pre-wrap;margin:.3em 0}
 .compact li{padding:.55em 0;border-bottom:1px solid var(--line)}
 .compact a{display:inline-block;min-height:44px;line-height:44px}
 footer{margin-top:2em;padding-top:1em;border-top:1px solid var(--line);color:var(--muted);font-size:.85rem}
+.headlines{padding-left:1.2em;margin:.4em 0}
+.headlines li{margin:.45em 0;font-weight:600}
+.story h4{font-size:1.1rem;line-height:1.3;margin:.1em 0 .3em}
+.story p{margin:.3em 0 .5em}
+.story .meta a{display:inline-block;min-height:44px;line-height:44px}
+`;
+
+/**
+ * Email CSS: the same layout with plain colors. Gmail drops CSS variables and <details>,
+ * so nothing here depends on them. The preheader is the hidden inbox/notification preview.
+ */
+export const EMAIL_CSS = `
+body{margin:0;background:#fbfbf9;color:#1c1c1e;font:17px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+main{max-width:680px;margin:0 auto;padding:16px}
+a{color:#0b57d0}
+h1{font-size:1.5rem;margin:.2em 0}
+h2{font-size:1.25rem;margin:1.5em 0 .6em;padding-top:.4em;border-top:1px solid #e3e3df}
+h3{font-size:1rem;margin:1.2em 0 .4em;color:#6b6b70;text-transform:uppercase;letter-spacing:.04em}
+.meta{color:#6b6b70;font-size:.9rem}
+.warn{background:#fff4d6;color:#5c4300;padding:.6em .9em;border-radius:10px;margin:.6em 0}
+.preheader{display:none;max-height:0;overflow:hidden;opacity:0;color:transparent}
+nav ul{list-style:none;padding:0;margin:.5em 0}
+nav a{display:block;padding:.6em 0;text-decoration:none;border-bottom:1px solid #e3e3df}
+.card{background:#ffffff;border:1px solid #e3e3df;border-radius:12px;padding:12px;margin:12px 0}
+.card img{display:block;width:100%;height:auto;border-radius:8px;margin-bottom:8px}
+.card h4{font-size:1.1rem;line-height:1.3;margin:.2em 0}
+.reason{font-style:italic}
+.desc{color:#6b6b70;font-size:.95rem}
+.compact{list-style:none;padding:0;margin:0}
+.compact li{padding:.55em 0;border-bottom:1px solid #e3e3df}
+.headlines{padding-left:1.2em;margin:.4em 0}
+.headlines li{margin:.45em 0;font-weight:600}
+.story p{margin:.3em 0 .5em}
+footer{margin-top:2em;padding-top:1em;border-top:1px solid #e3e3df;color:#6b6b70;font-size:.85rem}
 `;

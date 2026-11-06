@@ -99,6 +99,21 @@ export async function runSetup(deps: SetupDeps): Promise<SetupResult> {
     setScalar(doc, ["x", "enabled"], false);
     io.say("Skipping X: x.enabled is false. Re-run `digister setup` later to add a List.");
   }
+  let emailTo: string | null = null;
+  for (;;) {
+    const answer = (await io.ask("Email address to send the digest to (empty to skip email)")).trim();
+    if (!answer) break;
+    if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(answer)) {
+      emailTo = answer;
+      break;
+    }
+    io.say("That does not look like an email address. Try again, or press Enter to skip email.");
+  }
+  if (emailTo) {
+    setScalar(doc, ["email", "to"], emailTo);
+    setScalar(doc, ["email", "enabled"], true);
+  }
+
   writeFileSync(mainFile, doc.toString());
   io.say(`Saved ${mainFile}`);
 
@@ -109,6 +124,10 @@ export async function runSetup(deps: SetupDeps): Promise<SetupResult> {
   const steps = ["Next steps:"];
   let n = 1;
   if (listUrl) steps.push(`  ${n++}. digister x login      (log in to X once in the browser window)`);
+  if (emailTo) {
+    steps.push(`  ${n++}. Save your SMTP app password: see "Email to your phone" in the README`);
+    steps.push(`  ${n++}. digister email test    (send a test email)`);
+  }
   steps.push(`  ${n++}. digister run --dry     (try it without side effects)`);
   steps.push(`  ${n++}. digister run           (write your first digest)`);
   steps.push(`  ${n++}. Install the daily schedule: see "Scheduling" in the README`);

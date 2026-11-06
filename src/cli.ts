@@ -6,6 +6,7 @@ import { formatChecks, runDoctor } from "./doctor.js";
 import { readFileSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
 import { buildXCookies, parseCookieExport, xCheck, xImportCookies, xLogin } from "./sources/x/browser.js";
+import { sendDigestEmail } from "./deliver/email.js";
 import { runPipeline } from "./pipeline/run.js";
 import { importChannels } from "./sources/youtube/channels.js";
 import { runSetup, terminalIO } from "./setup.js";
@@ -86,6 +87,29 @@ export function buildProgram(): Command {
               : "X: blocked (challenge page or HTTP error); open the profile headed and resolve it",
         );
         if (state !== "logged_in") process.exitCode = 1;
+      } catch (err) {
+        console.error((err as Error).message);
+        process.exitCode = 1;
+      }
+    });
+
+  const email = program.command("email").description("Email delivery");
+  email
+    .command("test")
+    .description("Send a short test email with the configured SMTP settings")
+    .action(async () => {
+      try {
+        const cfg = loadDigisterConfig().email;
+        if (!cfg.to) throw new Error("email.to is empty in digister.yaml");
+        await sendDigestEmail(
+          {
+            subject: "Digister test email",
+            html: "<p>Digister can send you email. Your morning digest will arrive like this.</p>",
+            text: "Digister can send you email. Your morning digest will arrive like this.",
+          },
+          cfg,
+        );
+        console.log(`Test email sent to ${cfg.to}${cfg.enabled ? "" : " (set email.enabled: true to get the daily digest)"}`);
       } catch (err) {
         console.error((err as Error).message);
         process.exitCode = 1;
