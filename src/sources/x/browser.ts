@@ -89,3 +89,76 @@ export async function xCheck(opts: BrowserOptions): Promise<XState> {
     await context.close();
   }
 }
+
+export interface XCookie {
+  name: string;
+  value: string;
+  domain: string;
+  path: string;
+  expires: number;
+  httpOnly: boolean;
+  secure: boolean;
+  sameSite: "None";
+}
+
+const AUTH_TOKEN_RE = /^[0-9a-f]{40}$/i;
+const CT0_RE = /^[0-9a-f]{32,160}$/i;
+
+/** Pure: turn the two session cookie values copied from a normal browser into Playwright cookies. */
+export function buildXCookies(authToken: string, ct0: string, now: number = Date.now()): XCookie[] {
+  const auth = authToken.trim().replace(/^"|"$/g, "");
+  const csrf = ct0.trim().replace(/^"|"$/g, "");
+  if (!AUTH_TOKEN_RE.test(auth)) {
+    throw new Error("auth_token looks wrong: it should be 40 letters and digits (0-9, a-f). Copy the Value column, not the name.");
+  }
+  if (!CT0_RE.test(csrf)) {
+    throw new Error("ct0 looks wrong: it should be a long run of letters and digits (0-9, a-f). Copy the Value column, not the name.");
+  }
+  const expires = Math.floor(now / 1000) + 365 * 24 * 3600;
+  const base = { domain: ".x.com", path: "/", expires, secure: true, sameSite: "None" as const };
+  return [
+    { ...base, name: "auth_token", value: auth, httpOnly: true },
+    { ...base, name: "ct0", value: csrf, httpOnly: false },
+  ];
+}
+
+/** Pure: read a Cookie-Editor / EditThisCookie JSON export and pick the x.com session cookies. */
+export function parseCookieExport(json: string, now: number = Date.now()): XCookie[] {
+  let data: unknown;
+  try {
+    data = JSON.parse(json);
+  } catch {
+    throw new Error('Cookie file is not valid JSON. Export it from Cookie-Editor with "Export as JSON".');
+  }
+  if (!Array.isArray(data)) throw new Error("Cookie file should be a JSON array of cookies.");
+  const pick = (name: string): string | undefined => {
+    for (const c of data as unknown[]) {
+      if (!c || typeof c !== "object") continue;
+      const { name: n, value, domain } = c as { name?: unknown; value?: unknown; domain?: unknown };
+      const d = typeof domain === "string" ? domain.replace(/^\./, "") : "x.com";
+      if (n === name && typeof value === "string" && (d === "x.com" || d.endsWith(".x.com"))) return value;
+    }
+    return undefined;
+  };
+  const auth = pick("auth_token");
+  const ct0 = pick("ct0");
+  if (!auth) throw new Error("No x.com auth_token cookie in the file. Export it while logged in on x.com.");
+  if (!ct0) throw new Error("No x.com ct0 cookie in the file. Export it while logged in on x.com.");
+  return buildXCookies(auth, ct0, now);
+}
+
+export interface ImportDeps {
+  openContext?: (opts: BrowserOptions) => Promise<Pick<BrowserContext, "addCookies" | "close">>;
+  verify?: (opts: BrowserOptions) => Promise<XState>;
+}
+
+/** Save the cookies into the Digister profile, then check the session. Cookie values are never logged. */
+export async function xImportCookies(cookies: XCookie[], deps: ImportDeps = {}): Promise<XState> {
+  const context = await (deps.openContext ?? openXContext)({ headless: true });
+  try {
+    await context.addCookies(cookies);
+  } finally {
+    await context.close();
+  }
+  return (deps.verify ?? xCheck)({ headless: true });
+}

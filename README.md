@@ -50,6 +50,12 @@ Do these in order.
    npx tsx src/cli.ts x login
    ```
    A browser window opens. Log in yourself, then press Enter in the terminal. Digister never sees or stores your password.
+
+   **If login in that window fails** (for example Google or Apple sign-in says the browser is not secure), copy your session from your normal browser instead. Open x.com there while logged in, then DevTools > Application > Cookies > `https://x.com`, and copy the values of `auth_token` and `ct0`. Then run:
+   ```
+   npx tsx src/cli.ts x import-cookies
+   ```
+   and paste the two values when asked. You can also pass a JSON export from a cookie extension like Cookie-Editor: `x import-cookies --file cookies.json`. These two cookies are your logged-in session: never share them, and delete the export file afterwards. Logging out of X in your normal browser ends the session, so if you do that, import fresh values.
 8. **Check everything:**
    ```
    npx tsx src/cli.ts doctor
