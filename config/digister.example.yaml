@@ -17,8 +17,10 @@ youtube:
 digest:
   must_watch_max: 3
   mode: brief                    # brief: headlines + stories written by the model; list: one card per post
-  brief_posts_max: 40            # brief mode: best posts the model reads
+  brief_posts_max: 80            # brief mode: best posts the model reads and groups
   brief_min_score: 5             # brief mode: posts below this score are left out
+  brief_stories_max: 8           # brief mode: most stories written (one model call each)
+  brief_quick_hits_max: 15       # brief mode: most one-line quick hits; the rest are counted
   posts_max: 20                  # list mode only
   reading_minutes: 25            # list mode only
 email:
