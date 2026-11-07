@@ -92,7 +92,8 @@ All three live in `~/.digister/config/`.
 | `x.lookback_hours`, `youtube.lookback_hours` | How far back to look. |
 | `youtube.data_api_key` | Optional free key; adds durations. Leave empty to skip. |
 | `digest.mode` | `brief` (default): the model writes "Today in 60 seconds" headlines, short stories that merge posts about the same thing, and one-line quick hits for the rest. `list`: one card per post. |
-| `digest.brief_posts_max`, `brief_min_score` | Brief mode: how many of the best posts the model reads (25) and the lowest score let in (5). |
+| `digest.brief_posts_max`, `brief_min_score` | Brief mode: how many of the best posts the model reads and groups (80) and the lowest score let in (5). |
+| `digest.brief_stories_max`, `brief_quick_hits_max` | Brief mode: most stories written (8, one model call each) and most one-line quick hits (15). Posts beyond that are counted, not listed. |
 | `digest.must_watch_max`, `posts_max`, `reading_minutes` | Size of the digest (`posts_max` and `reading_minutes` apply to list mode). |
 | `email.enabled`, `email.to` | Email each digest to this address. See "Email to your phone". |
 | `email.smtp_host`, `smtp_port`, `smtp_user`, `from` | SMTP server; defaults suit Gmail. `smtp_user` and `from` default to `to`. |

@@ -257,7 +257,10 @@ async function execute(deps: RunDeps, out: (line: string) => void): Promise<RunO
     if (cfg.digest.mode === "brief") {
       const briefPosts = selectBriefPosts(candidates, cfg.digest);
       if (briefPosts.length) {
-        brief = await buildBrief(briefPosts, interests, deps.llm);
+        brief = await buildBrief(briefPosts, interests, deps.llm, {
+          storiesMax: cfg.digest.brief_stories_max,
+          quickHitsMax: cfg.digest.brief_quick_hits_max,
+        });
         if (brief) saveBrief(brief, date);
         else warnings.push("The brief could not be written by the model; showing the post list instead");
       }

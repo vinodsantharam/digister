@@ -99,7 +99,7 @@ function StoryCard({ s }: { s: Story }) {
   );
 }
 
-/** Stories grouped by topic, keeping the order normalizeBrief gave them. */
+/** Stories grouped by topic, keeping the order buildBrief gave them. */
 function storyGroups(stories: Story[]): { topic: string; stories: Story[] }[] {
   const groups: { topic: string; stories: Story[] }[] = [];
   for (const s of stories) {
@@ -133,10 +133,10 @@ export function Digest({ data, variant = "page" }: { data: DigestData; variant?:
   const brief = data.brief ?? null;
   const postCount = postCountOf(data);
   const toc: { id: string; label: string }[] = [];
-  if (brief) toc.push({ id: "today", label: "Today in 60 seconds" });
+  if (brief?.headlines.length) toc.push({ id: "today", label: "Today in 60 seconds" });
   if (data.mustWatch.length) toc.push({ id: "must-watch", label: `Must watch today (${data.mustWatch.length})` });
   if (brief) {
-    toc.push({ id: "stories", label: `Stories (${brief.stories.length})` });
+    if (brief.stories.length) toc.push({ id: "stories", label: `Stories (${brief.stories.length})` });
     if (brief.quickHits.length) toc.push({ id: "quick-hits", label: `Quick hits (${brief.quickHits.length})` });
     if (brief.leftovers.length) toc.push({ id: "more-posts", label: "More posts" });
   } else if (postCount) toc.push({ id: "x-posts", label: `X posts (${postCount})` });
@@ -178,7 +178,7 @@ export function Digest({ data, variant = "page" }: { data: DigestData; variant?:
           ) : (
             <p>Nothing new worth your time today.</p>
           )}
-          {brief ? (
+          {brief?.headlines.length ? (
             <section id="today">
               <h2>Today in 60 seconds</h2>
               <ul className="headlines">
@@ -198,17 +198,19 @@ export function Digest({ data, variant = "page" }: { data: DigestData; variant?:
           ) : null}
           {brief ? (
             <>
-              <section id="stories">
-                <h2>Stories</h2>
-                {storyGroups(brief.stories).map((g) => (
-                  <div key={g.topic} id={slug(g.topic)}>
-                    <h3>{g.topic}</h3>
-                    {g.stories.map((s) => (
-                      <StoryCard s={s} key={s.sources[0]!.id} />
-                    ))}
-                  </div>
-                ))}
-              </section>
+              {brief.stories.length ? (
+                <section id="stories">
+                  <h2>Stories</h2>
+                  {storyGroups(brief.stories).map((g) => (
+                    <div key={g.topic} id={slug(g.topic)}>
+                      <h3>{g.topic}</h3>
+                      {g.stories.map((s) => (
+                        <StoryCard s={s} key={s.sources[0]!.id} />
+                      ))}
+                    </div>
+                  ))}
+                </section>
+              ) : null}
               {brief.quickHits.length ? (
                 <section id="quick-hits">
                   <h2>Quick hits</h2>
@@ -286,14 +288,14 @@ export function renderDigestText(data: DigestData): string {
   const lines: string[] = [`Digest ${data.date}`, ""];
   for (const w of data.warnings) lines.push(`! ${w}`);
   if (data.warnings.length) lines.push("");
-  if (data.brief) {
+  if (data.brief?.headlines.length) {
     lines.push("TODAY IN 60 SECONDS", ...data.brief.headlines.map((h) => `- ${h}`), "");
   }
   if (data.mustWatch.length) {
     lines.push("MUST WATCH TODAY", ...data.mustWatch.map((v) => `- ${v.title} (${v.channel_name})\n  ${safeUrl(v.url)}`), "");
   }
   if (data.brief) {
-    lines.push("STORIES");
+    if (data.brief.stories.length) lines.push("STORIES");
     for (const s of data.brief.stories) {
       lines.push(`- ${s.title}`, `  ${s.body}`, ...s.sources.map((p) => `  @${p.author_handle}: ${safeUrl(p.url)}`));
     }
