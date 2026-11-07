@@ -50,11 +50,8 @@ const model = () =>
   new MockLanguageModelV4({
     doGenerate: async (opts) => {
       const text = JSON.stringify(opts.prompt);
-      if (text.includes("morning briefing"))
-        return reply({
-          headlines: ["Alice ships a thing"],
-          stories: [{ topic: "AI", title: "Alice ships", body: "Alice released a tool today.", post_ids: ["p1"] }],
-        });
+      if (text.includes("You write one story")) return reply({ title: "Alice ships", body: "Alice released a tool today." });
+      if (text.includes("today in 60 seconds")) return reply({ headlines: [{ story: "s1", line: "Alice ships a thing" }] });
       if (text.includes("Posts:"))
         return reply({ items: [{ id: "p1", score: 8, topic: "AI", summary: "Alice ships a thing." }] });
       return reply({ items: [{ id: "vid1", score: 8, must_watch: true, reason: "Great match" }] });
@@ -193,7 +190,7 @@ describe("runPipeline", () => {
     const noBrief = new MockLanguageModelV4({
       doGenerate: async (opts) => {
         const text = JSON.stringify(opts.prompt);
-        if (text.includes("morning briefing")) return reply({ nonsense: true });
+        if (text.includes("You write one story")) return reply({ nonsense: true });
         if (text.includes("Posts:")) return reply({ items: [{ id: "p1", score: 8, topic: "AI", summary: "Alice ships a thing." }] });
         return reply({ items: [{ id: "vid1", score: 8, must_watch: true, reason: "Great match" }] });
       },

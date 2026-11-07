@@ -135,6 +135,7 @@ describe("brief rendering", () => {
     stories: [
       { topic: "AI", title: "Qwen 4 released", body: "Three people tested it.", sources: [post("p1"), post("p2", { author_handle: "bob" })] },
     ],
+    quickHits: [{ line: "Bun 2 ships a faster installer", post: post("p4", { author_handle: "carol" }) }],
     leftovers: [post("p3", { summary: "A side note." })],
   };
   const withBrief: DigestData = { ...data, groups: [], brief };
@@ -145,8 +146,10 @@ describe("brief rendering", () => {
     expect(html).toContain("<li>Qwen 4 is out</li>");
     expect(html).toContain("2 posts · ");
     expect(html).toContain('<a href="https://x.com/alice/status/p2">@bob</a>');
-    expect(html).toContain("More posts (1)");
-    expect(html).toContain("1 story from 3 posts");
+    expect(html).toContain("Quick hits (1)");
+    expect(html).toContain('Bun 2 ships a faster installer <a href="https://x.com/alice/status/p4">@carol</a>');
+    expect(html).toContain("More posts");
+    expect(html).toContain("1 story from 4 posts");
     expect(html).not.toContain("Open on X");
     expect(balanced(html)).toBe(true);
     expect(html).toMatchSnapshot();
@@ -165,6 +168,15 @@ describe("brief rendering", () => {
     const text = renderDigestText(withBrief);
     expect(text).toContain("TODAY IN 60 SECONDS\n- Qwen 4 is out");
     expect(text).toContain("- Qwen 4 released\n  Three people tested it.\n  @alice: https://x.com/alice/status/p1");
+    expect(text).toContain("QUICK HITS\n- Bun 2 ships a faster installer (@carol)\n  https://x.com/alice/status/p4");
     expect(text).toContain("! X needs login");
+  });
+
+  it("shows at most 5 skipped posts and counts the rest", () => {
+    const many = Array.from({ length: 8 }, (_, i) => post(`s${i}`, { summary: `skipped ${i}` }));
+    const html = renderDigest({ ...withBrief, brief: { ...brief, leftovers: many } });
+    expect(html).toContain("skipped 4");
+    expect(html).not.toContain("skipped 5");
+    expect(html).toContain("3 more posts skipped.");
   });
 });
